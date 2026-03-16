@@ -1,5 +1,7 @@
 import { useBettingStore } from "@/store/bettingStore";
+import { COMMISSION_RATE } from "@/types/betting";
 import { motion, AnimatePresence } from "framer-motion";
+import { Clock, CheckCircle2, Trophy, XCircle } from "lucide-react";
 
 const OrderBook = ({ matchId }: { matchId?: string }) => {
   const orders = useBettingStore((s) => s.orders);
@@ -34,7 +36,7 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-pending animate-pulse-dot" />
+                    <Clock className="h-3.5 w-3.5 text-pending" />
                     <span className="text-sm font-medium">{order.teamName}</span>
                   </div>
                   <span className="text-sm font-semibold tabular-nums">₹{order.amount}</span>
@@ -49,29 +51,34 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
       )}
 
       {matched.length > 0 && (
-        <Section title="Matched" count={matched.length}>
+        <Section title="Confirmed" count={matched.length}>
           <AnimatePresence>
-            {matched.map((order) => (
-              <motion.div
-                key={order.id}
-                layout
-                initial={{ scale: 1 }}
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 0.2 }}
-                className="rounded-lg bg-card p-3 shadow-subtle border-l-4 border-success"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-success" />
-                    <span className="text-sm font-medium">{order.teamName}</span>
+            {matched.map((order) => {
+              const winAmount = order.amount * 2 * (1 - COMMISSION_RATE);
+              return (
+                <motion.div
+                  key={order.id}
+                  layout
+                  initial={{ scale: 1 }}
+                  animate={{ scale: [1, 1.02, 1] }}
+                  transition={{ duration: 0.2 }}
+                  className="rounded-lg bg-card p-3 shadow-subtle border-l-4 border-success"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+                      <span className="text-sm font-medium">{order.teamName}</span>
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums text-success">
+                      Win ₹{winAmount.toFixed(0)}
+                    </span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums">₹{order.amount * 2} pot</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Matched · ₹{(order.amount * 2 * 0.05).toFixed(0)} commission pending
-                </p>
-              </motion.div>
-            ))}
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bet ₹{order.amount} · Matched ✓
+                  </p>
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </Section>
       )}
@@ -86,7 +93,14 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">{order.teamName}</span>
+                <div className="flex items-center gap-2">
+                  {order.status === "won" ? (
+                    <Trophy className="h-3.5 w-3.5 text-success" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5 text-destructive" />
+                  )}
+                  <span className="text-sm font-medium">{order.teamName}</span>
+                </div>
                 <span className={`text-sm font-semibold tabular-nums ${
                   order.status === "won" ? "text-success" : "text-destructive"
                 }`}>
