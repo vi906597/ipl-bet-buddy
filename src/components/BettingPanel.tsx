@@ -31,9 +31,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="text-center">
-        <p className="text-xs text-muted-foreground">Select your team</p>
-      </div>
+      <p className="text-xs text-muted-foreground text-center">Select your team</p>
 
       {/* Team Selection */}
       <div className="grid grid-cols-2 gap-3">
@@ -61,7 +59,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
             <p className="text-xs text-muted-foreground mb-3">
               Stake on <span className="font-semibold text-foreground">{selectedTeam.shortName}</span>
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {STAKE_OPTIONS.map((amount) => {
                 const winning = calcWinning(amount);
                 return (
@@ -70,7 +68,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
                     whileTap={{ scale: 0.95 }}
                     disabled={wallet < amount || placing !== null}
                     onClick={() => handleStake(amount)}
-                    className={`flex flex-col items-center justify-center rounded-lg py-3 px-2 text-sm font-medium tabular-nums transition-all
+                    className={`flex flex-col items-center justify-center rounded-lg py-3 px-1 tabular-nums transition-all
                       ${wallet < amount
                         ? "bg-muted/50 text-muted-foreground/40 cursor-not-allowed"
                         : "bg-secondary hover:bg-secondary/80 active:bg-muted cursor-pointer"
@@ -80,10 +78,10 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <>
-                        <span className="text-sm font-semibold">₹{amount}</span>
-                        <span className="flex items-center gap-0.5 text-[10px] text-success mt-0.5">
+                        <span className="text-sm font-semibold">₹{amount >= 1000 ? `${amount / 1000}K` : amount}</span>
+                        <span className="flex items-center gap-0.5 text-[9px] text-success mt-0.5">
                           <TrendingUp className="h-2.5 w-2.5" />
-                          Win ₹{winning}
+                          ₹{winning >= 1000 ? `${(winning / 1000).toFixed(1)}K` : winning}
                         </span>
                       </>
                     )}
