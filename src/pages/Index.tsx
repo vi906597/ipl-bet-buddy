@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MATCHES } from "@/types/betting";
 import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
@@ -9,12 +9,21 @@ import BottomNav from "@/components/BottomNav";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, TrendingUp, Users, Trophy, Zap } from "lucide-react";
 import { useBettingStore } from "@/store/bettingStore";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("home");
   const selectedMatch = MATCHES.find((m) => m.id === selectedMatchId);
-  const { wallet, orders } = useBettingStore();
+  const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchOrders();
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
@@ -129,8 +138,8 @@ const Index = () => {
             <div className="h-16 w-16 rounded-full bg-primary/15 border-2 border-primary/30 flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">🏏</span>
             </div>
-            <p className="font-bold text-lg">Player</p>
-            <p className="text-xs text-muted-foreground">Member since March 2026</p>
+            <p className="font-bold text-lg">{user?.user_metadata?.username || "Player"}</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-card border border-border p-3 text-center">

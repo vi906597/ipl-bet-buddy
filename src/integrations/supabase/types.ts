@@ -14,13 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      orders: {
+        Row: {
+          amount: number
+          commission: number | null
+          created_at: string
+          id: string
+          match_id: string
+          matched_at: string | null
+          matched_with: string | null
+          opponent_name: string
+          payout: number | null
+          status: string
+          team_id: string
+          team_name: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          commission?: number | null
+          created_at?: string
+          id?: string
+          match_id: string
+          matched_at?: string | null
+          matched_with?: string | null
+          opponent_name: string
+          payout?: number | null
+          status?: string
+          team_id: string
+          team_name: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          commission?: number | null
+          created_at?: string
+          id?: string
+          match_id?: string
+          matched_at?: string | null
+          matched_with?: string | null
+          opponent_name?: string
+          payout?: number | null
+          status?: string
+          team_id?: string
+          team_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          username: string
+          wallet: number
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          username?: string
+          wallet?: number
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          username?: string
+          wallet?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      place_order: {
+        Args: {
+          p_amount: number
+          p_match_id: string
+          p_opponent_name: string
+          p_team_id: string
+          p_team_name: string
+        }
+        Returns: Json
+      }
+      settle_match: {
+        Args: { p_match_id: string; p_winner_team_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

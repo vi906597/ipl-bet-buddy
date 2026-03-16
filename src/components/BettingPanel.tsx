@@ -4,6 +4,7 @@ import { STAKE_OPTIONS, COMMISSION_RATE } from "@/types/betting";
 import { useBettingStore } from "@/store/bettingStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, TrendingUp } from "lucide-react";
+import { toast } from "sonner";
 
 interface BettingPanelProps {
   match: Match;
@@ -23,9 +24,16 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
   const handleStake = async (amount: number) => {
     if (!selectedTeam || wallet < amount) return;
     setPlacing(amount);
-    await new Promise((r) => setTimeout(r, 300));
     const opponent = selectedTeam.id === match.teamA.id ? match.teamB : match.teamA;
-    placeOrder(match.id, selectedTeam.id, selectedTeam.shortName, opponent.shortName, amount);
+    const result = await placeOrder(match.id, selectedTeam.id, selectedTeam.shortName, opponent.shortName, amount);
+    
+    if (result.error) {
+      toast.error(result.error);
+    } else if (result.status === "matched") {
+      toast.success("Bet matched! 🎯");
+    } else {
+      toast.info("Bet placed, waiting for opponent...");
+    }
     setPlacing(null);
   };
 

@@ -1,74 +1,73 @@
 import { create } from "zustand";
-import type { Order } from "@/types/betting";
-import { COMMISSION_RATE } from "@/types/betting";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Order = Tables<"orders">;
 
 interface BettingState {
   wallet: number;
   orders: Order[];
-  placeOrder: (matchId: string, teamId: string, teamName: string, opponentName: string, amount: number) => void;
-  settleMatch: (matchId: string, winnerTeamId: string) => void;
+  loading: boolean;
+  fetchProfile: () => Promise<void>;
+  fetchOrders: (matchId?: string) => Promise<void>;
+  placeOrder: (matchId: string, teamId: string, teamName: string, opponentName: string, amount: number) => Promise<{ status: string; error?: string }>;
+  settleMatch: (matchId: string, winnerTeamId: string) => Promise<void>;
 }
 
 export const useBettingStore = create<BettingState>((set, get) => ({
-  wallet: 5000,
+  wallet: 0,
   orders: [],
+  loading: false,
 
-  placeOrder: (matchId, teamId, teamName, opponentName, amount) => {
-    const { wallet, orders } = get();
-    if (wallet < amount) return;
-
-    // Check if there's a pending order on the opponent side for this match
-    const pendingOpponent = orders.find(
-      (o) => o.matchId === matchId && o.teamId !== teamId && o.status === "pending" && o.amount === amount
-    );
-
-    const newOrder: Order = {
-      id: `order-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      matchId,
-      teamId,
-      teamName,
-      opponentName,
-      amount,
-      status: "pending",
-    };
-
-    if (pendingOpponent) {
-      // Match both orders
-      newOrder.status = "matched";
-      newOrder.matchedAt = Date.now();
-      const updatedOrders = orders.map((o) =>
-        o.id === pendingOpponent.id ? { ...o, status: "matched" as const, matchedAt: Date.now() } : o
-      );
-      set({
-        wallet: wallet - amount,
-        orders: [...updatedOrders, newOrder],
-      });
-    } else {
-      set({
-        wallet: wallet - amount,
-        orders: [...orders, newOrder],
-      });
-    }
+  fetchProfile: async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("wallet")
+      .single();
+    if (data) set({ wallet: data.wallet });
   },
 
-  settleMatch: (matchId, winnerTeamId) => {
-    const { orders, wallet } = get();
-    let walletDelta = 0;
+  fetchOrders: async (matchId?: string) => {
+    let query = supabase.from("orders").select("*").order("created_at", { ascending: false });
+    if (matchId) query = query.eq("match_id", matchId);
+    const { data } = await query;
+    if (data) set({ orders: data });
+  },
 
-    const updatedOrders = orders.map((o) => {
-      if (o.matchId !== matchId || o.status !== "matched") return o;
-
-      if (o.teamId === winnerTeamId) {
-        const pot = o.amount * 2;
-        const commission = pot * COMMISSION_RATE;
-        const payout = pot - commission;
-        walletDelta += payout;
-        return { ...o, status: "won" as const, commission, payout };
-      } else {
-        return { ...o, status: "lost" as const, commission: 0, payout: 0 };
-      }
+  placeOrder: async (matchId, teamId, teamName, opponentName, amount) => {
+    set({ loading: true });
+    const { data, error } = await supabase.rpc("place_order", {
+      p_match_id: matchId,
+      p_team_id: teamId,
+      p_team_name: teamName,
+      p_opponent_name: opponentName,
+      p_amount: amount,
     });
 
-    set({ orders: updatedOrders, wallet: wallet + walletDelta });
+    if (error) {
+      set({ loading: false });
+      return { status: "error", error: error.message };
+    }
+
+    const result = data as any;
+    if (result?.error) {
+      set({ loading: false });
+      return { status: "error", error: result.error };
+    }
+
+    // Refresh data
+    await get().fetchProfile();
+    await get().fetchOrders(matchId);
+    set({ loading: false });
+    return { status: result?.status || "pending" };
+  },
+
+  settleMatch: async (matchId, winnerTeamId) => {
+    await supabase.rpc("settle_match", {
+      p_match_id: matchId,
+      p_winner_team_id: winnerTeamId,
+    });
+    await get().fetchProfile();
+    await get().fetchOrders(matchId);
   },
 }));

@@ -5,7 +5,7 @@ import { Trophy } from "lucide-react";
 
 const SettlePanel = ({ match }: { match: Match }) => {
   const { orders, settleMatch } = useBettingStore();
-  const hasMatched = orders.some((o) => o.matchId === match.id && o.status === "matched");
+  const hasMatched = orders.some((o) => o.match_id === match.id && o.status === "matched");
 
   if (!hasMatched) return null;
 
