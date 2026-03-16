@@ -29,25 +29,17 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
     setPlacing(null);
   };
 
+  const formatAmount = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K` : `${n}`;
+
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground text-center">Select your team</p>
+      <p className="text-xs text-muted-foreground text-center">Pick your winning team</p>
 
-      {/* Team Selection */}
       <div className="grid grid-cols-2 gap-3">
-        <TeamButton
-          team={match.teamA}
-          isSelected={selectedTeam?.id === match.teamA.id}
-          onSelect={() => setSelectedTeam(match.teamA)}
-        />
-        <TeamButton
-          team={match.teamB}
-          isSelected={selectedTeam?.id === match.teamB.id}
-          onSelect={() => setSelectedTeam(match.teamB)}
-        />
+        <TeamButton team={match.teamA} isSelected={selectedTeam?.id === match.teamA.id} onSelect={() => setSelectedTeam(match.teamA)} />
+        <TeamButton team={match.teamB} isSelected={selectedTeam?.id === match.teamB.id} onSelect={() => setSelectedTeam(match.teamB)} />
       </div>
 
-      {/* Stake Grid */}
       <AnimatePresence>
         {selectedTeam && (
           <motion.div
@@ -57,7 +49,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
             transition={{ duration: 0.2 }}
           >
             <p className="text-xs text-muted-foreground mb-3">
-              Stake on <span className="font-semibold text-foreground">{selectedTeam.shortName}</span>
+              Stake on <span className="font-bold text-primary">{selectedTeam.shortName}</span>
             </p>
             <div className="grid grid-cols-4 gap-2">
               {STAKE_OPTIONS.map((amount) => {
@@ -68,20 +60,20 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
                     whileTap={{ scale: 0.95 }}
                     disabled={wallet < amount || placing !== null}
                     onClick={() => handleStake(amount)}
-                    className={`flex flex-col items-center justify-center rounded-lg py-3 px-1 tabular-nums transition-all
+                    className={`flex flex-col items-center justify-center rounded-xl py-3 px-1 tabular-nums transition-all border
                       ${wallet < amount
-                        ? "bg-muted/50 text-muted-foreground/40 cursor-not-allowed"
-                        : "bg-secondary hover:bg-secondary/80 active:bg-muted cursor-pointer"
+                        ? "bg-muted/30 text-muted-foreground/30 border-transparent cursor-not-allowed"
+                        : "bg-secondary border-border hover:border-primary/30 hover:bg-primary/5 active:bg-primary/10 cursor-pointer"
                       }`}
                   >
                     {placing === amount ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     ) : (
                       <>
-                        <span className="text-sm font-semibold">₹{amount >= 1000 ? `${amount / 1000}K` : amount}</span>
-                        <span className="flex items-center gap-0.5 text-[9px] text-success mt-0.5">
+                        <span className="text-sm font-bold">₹{formatAmount(amount)}</span>
+                        <span className="flex items-center gap-0.5 text-[9px] text-primary font-medium mt-0.5">
                           <TrendingUp className="h-2.5 w-2.5" />
-                          ₹{winning >= 1000 ? `${(winning / 1000).toFixed(1)}K` : winning}
+                          ₹{formatAmount(winning)}
                         </span>
                       </>
                     )}
@@ -98,20 +90,20 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
 
 const TeamButton = ({ team, isSelected, onSelect }: { team: Team; isSelected: boolean; onSelect: () => void }) => {
   const isPrimary = team.colorVar === "primary";
-  const baseClass = isPrimary
-    ? "bg-primary/10 text-primary hover:bg-primary/20"
-    : "bg-accent/10 text-accent hover:bg-accent/20";
-  const selectedClass = isPrimary
-    ? "bg-primary/20 ring-2 ring-primary/60 shadow-[0_0_12px_hsl(var(--primary)/0.2)]"
-    : "bg-accent/20 ring-2 ring-accent/60 shadow-[0_0_12px_hsl(var(--accent)/0.2)]";
 
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
       onClick={onSelect}
-      className={`rounded-lg py-5 text-center font-bold text-base transition-all ${
-        isSelected ? selectedClass : baseClass
-      }`}
+      className={`rounded-xl py-5 text-center font-bold text-base transition-all border
+        ${isSelected
+          ? isPrimary
+            ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.15)]"
+            : "bg-accent/15 border-accent/40 text-accent shadow-[0_0_16px_hsl(var(--accent)/0.15)]"
+          : isPrimary
+            ? "bg-primary/5 border-border text-primary/70 hover:bg-primary/10 hover:border-primary/20"
+            : "bg-accent/5 border-border text-accent/70 hover:bg-accent/10 hover:border-accent/20"
+        }`}
     >
       {team.shortName}
     </motion.button>
