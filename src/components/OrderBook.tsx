@@ -2,11 +2,16 @@ import { useBettingStore } from "@/store/bettingStore";
 import { COMMISSION_RATE } from "@/types/betting";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Trophy, XCircle } from "lucide-react";
+import { useEffect } from "react";
 
 const OrderBook = ({ matchId }: { matchId?: string }) => {
-  const orders = useBettingStore((s) => s.orders);
+  const { orders, fetchOrders } = useBettingStore();
 
-  const filtered = matchId ? orders.filter((o) => o.matchId === matchId) : orders;
+  useEffect(() => {
+    fetchOrders(matchId);
+  }, [matchId]);
+
+  const filtered = matchId ? orders.filter((o) => o.match_id === matchId) : orders;
   const pending = filtered.filter((o) => o.status === "pending");
   const matched = filtered.filter((o) => o.status === "matched");
   const settled = filtered.filter((o) => o.status === "won" || o.status === "lost");
@@ -37,12 +42,12 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Clock className="h-3.5 w-3.5 text-pending" />
-                    <span className="text-sm font-medium">{order.teamName}</span>
+                    <span className="text-sm font-medium">{order.team_name}</span>
                   </div>
                   <span className="text-sm font-semibold tabular-nums">₹{order.amount}</span>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Waiting for {order.opponentName} backer
+                  Waiting for {order.opponent_name} backer
                 </p>
               </motion.div>
             ))}
@@ -67,7 +72,7 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="h-3.5 w-3.5 text-success" />
-                      <span className="text-sm font-medium">{order.teamName}</span>
+                      <span className="text-sm font-medium">{order.team_name}</span>
                     </div>
                     <span className="text-sm font-semibold tabular-nums text-success">
                       Win ₹{winAmount.toFixed(0)}
@@ -99,7 +104,7 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
                   ) : (
                     <XCircle className="h-3.5 w-3.5 text-destructive" />
                   )}
-                  <span className="text-sm font-medium">{order.teamName}</span>
+                  <span className="text-sm font-medium">{order.team_name}</span>
                 </div>
                 <span className={`text-sm font-semibold tabular-nums ${
                   order.status === "won" ? "text-success" : "text-destructive"
