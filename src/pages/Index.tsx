@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MATCHES } from "@/types/betting";
+import type { Match } from "@/types/betting";
 import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
 import BettingPanel from "@/components/BettingPanel";
@@ -10,13 +10,42 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, TrendingUp, Users, Trophy, Zap } from "lucide-react";
 import { useBettingStore } from "@/store/bettingStore";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Index = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("home");
-  const selectedMatch = MATCHES.find((m) => m.id === selectedMatchId);
+  const [matches, setMatches] = useState<Match[]>([]);
   const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
   const { user } = useAuth();
+
+  const selectedMatch = matches.find((m) => m.id === selectedMatchId);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+      fetchOrders();
+      loadMatches();
+    }
+  }, [user]);
+
+  const loadMatches = async () => {
+    const { data } = await supabase
+      .from("matches")
+      .select("*")
+      .order("start_time", { ascending: true });
+    if (data) {
+      const mapped: Match[] = data.map((m: any) => ({
+        id: m.match_key,
+        teamA: { id: m.team_a_id, name: m.team_a_name, shortName: m.team_a_short, colorVar: "primary" as const },
+        teamB: { id: m.team_b_id, name: m.team_b_name, shortName: m.team_b_short, colorVar: "accent" as const },
+        status: m.status as "upcoming" | "live" | "completed",
+        liquidity: 0,
+        startTime: m.start_time,
+      }));
+      setMatches(mapped);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -67,16 +96,20 @@ const Index = () => {
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               🏏 Today's Matches
             </h2>
-            <div className="space-y-3">
-              {MATCHES.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  isSelected={selectedMatchId === match.id}
-                  onSelect={(id) => setSelectedMatchId(id)}
-                />
-              ))}
-            </div>
+            {matches.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No matches available yet</p>
+            ) : (
+              <div className="space-y-3">
+                {matches.filter(m => m.status !== "completed").map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    isSelected={selectedMatchId === match.id}
+                    onSelect={(id) => setSelectedMatchId(id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </main>
       )}

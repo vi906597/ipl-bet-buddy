@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      matches: {
+        Row: {
+          created_at: string
+          id: string
+          match_key: string
+          start_time: string
+          status: string
+          team_a_id: string
+          team_a_name: string
+          team_a_short: string
+          team_b_id: string
+          team_b_name: string
+          team_b_short: string
+          winner_team_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_key: string
+          start_time?: string
+          status?: string
+          team_a_id: string
+          team_a_name: string
+          team_a_short: string
+          team_b_id: string
+          team_b_name: string
+          team_b_short: string
+          winner_team_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_key?: string
+          start_time?: string
+          status?: string
+          team_a_id?: string
+          team_a_name?: string
+          team_a_short?: string
+          team_b_id?: string
+          team_b_name?: string
+          team_b_short?: string
+          winner_team_id?: string | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number
