@@ -127,7 +127,7 @@ const Auth = () => {
 
         {/* Bonus info */}
         <div className="rounded-xl bg-primary/5 border border-primary/10 p-3 text-center">
-          <p className="text-xs text-primary font-medium">🎁 Get ₹5,000 free on signup!</p>
+          <p className="text-xs text-primary font-medium">🎁 Get ₹100 free on signup!</p>
         </div>
       </div>
     </div>
