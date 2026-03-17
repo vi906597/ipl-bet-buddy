@@ -96,16 +96,20 @@ const Index = () => {
             <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
               🏏 Today's Matches
             </h2>
-            <div className="space-y-3">
-              {MATCHES.map((match) => (
-                <MatchCard
-                  key={match.id}
-                  match={match}
-                  isSelected={selectedMatchId === match.id}
-                  onSelect={(id) => setSelectedMatchId(id)}
-                />
-              ))}
-            </div>
+            {matches.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6">No matches available yet</p>
+            ) : (
+              <div className="space-y-3">
+                {matches.filter(m => m.status !== "completed").map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    match={match}
+                    isSelected={selectedMatchId === match.id}
+                    onSelect={(id) => setSelectedMatchId(id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </main>
       )}
