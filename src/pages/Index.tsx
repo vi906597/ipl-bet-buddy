@@ -4,6 +4,7 @@ import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
 import BettingPanel from "@/components/BettingPanel";
 import OrderBook from "@/components/OrderBook";
+import AllBets from "@/components/AllBets";
 import SettlePanel from "@/components/SettlePanel";
 import BottomNav from "@/components/BottomNav";
 import { AnimatePresence, motion } from "framer-motion";
@@ -120,7 +121,7 @@ const Index = () => {
 
       {activeTab === "history" && (
         <main className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-4">
-          <h2 className="font-display text-lg font-bold">Bet History</h2>
+          <h2 className="font-display text-lg font-bold">My Bet History</h2>
           <OrderBook />
         </main>
       )}
@@ -302,9 +303,9 @@ const Index = () => {
                 <BettingPanel match={selectedMatch} />
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    My Bets
+                    All Bets
                   </h3>
-                  <OrderBook matchId={selectedMatchId!} />
+                  <AllBets match={selectedMatch} />
                   <div className="mt-3">
                     <SettlePanel match={selectedMatch} />
                   </div>
