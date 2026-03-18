@@ -122,7 +122,7 @@ const Index = () => {
       {activeTab === "history" && (
         <main className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-4">
           <h2 className="font-display text-lg font-bold">My Bet History</h2>
-          {(() => { const OrderBook = require("@/components/OrderBook").default; return <OrderBook />; })()}
+          <OrderBook />
         </main>
       )}
 
