@@ -25,9 +25,12 @@ export const useBettingStore = create<BettingState>((set, get) => ({
   loading: false,
 
   fetchProfile: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
     const { data } = await supabase
       .from("profiles")
       .select("wallet")
+      .eq("user_id", user.id)
       .single();
     if (data) set({ wallet: data.wallet });
   },
