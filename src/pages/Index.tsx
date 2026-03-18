@@ -7,7 +7,7 @@ import OrderBook from "@/components/OrderBook";
 import SettlePanel from "@/components/SettlePanel";
 import BottomNav from "@/components/BottomNav";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, TrendingUp, Users, Trophy, Zap } from "lucide-react";
+import { X, TrendingUp, Users, Trophy, Zap, ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
 import { useBettingStore } from "@/store/bettingStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
