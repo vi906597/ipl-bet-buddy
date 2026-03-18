@@ -3,7 +3,7 @@ import type { Match } from "@/types/betting";
 import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
 import BettingPanel from "@/components/BettingPanel";
-import OrderBook from "@/components/OrderBook";
+import AllBets from "@/components/AllBets";
 import SettlePanel from "@/components/SettlePanel";
 import BottomNav from "@/components/BottomNav";
 import { AnimatePresence, motion } from "framer-motion";
