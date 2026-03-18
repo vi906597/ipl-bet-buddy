@@ -28,6 +28,7 @@ const Index = () => {
     if (user) {
       fetchProfile();
       fetchOrders();
+      fetchTransactions();
       loadMatches();
     }
   }, [user]);
