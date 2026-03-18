@@ -21,6 +21,7 @@ interface BettingState {
 export const useBettingStore = create<BettingState>((set, get) => ({
   wallet: 0,
   orders: [],
+  transactions: [],
   loading: false,
 
   fetchProfile: async () => {
