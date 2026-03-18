@@ -75,4 +75,33 @@ export const useBettingStore = create<BettingState>((set, get) => ({
     await get().fetchProfile();
     await get().fetchOrders(matchId);
   },
+
+  deposit: async (amount) => {
+    const { data, error } = await supabase.rpc("wallet_deposit", { p_amount: amount });
+    if (error) return { error: error.message };
+    const result = data as any;
+    if (result?.error) return { error: result.error };
+    await get().fetchProfile();
+    await get().fetchTransactions();
+    return { status: "success" };
+  },
+
+  withdraw: async (amount) => {
+    const { data, error } = await supabase.rpc("wallet_withdraw", { p_amount: amount });
+    if (error) return { error: error.message };
+    const result = data as any;
+    if (result?.error) return { error: result.error };
+    await get().fetchProfile();
+    await get().fetchTransactions();
+    return { status: "success" };
+  },
+
+  fetchTransactions: async () => {
+    const { data } = await supabase
+      .from("transactions")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    if (data) set({ transactions: data });
+  },
 }));
