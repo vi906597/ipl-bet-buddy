@@ -36,8 +36,14 @@ export const useBettingStore = create<BettingState>((set, get) => ({
   },
 
   fetchOrders: async (matchId?: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
     let query = supabase.from("orders").select("*").order("created_at", { ascending: false });
-    if (matchId) query = query.eq("match_id", matchId);
+    if (matchId) {
+      query = query.eq("match_id", matchId);
+    } else if (user) {
+      // History tab: only show current user's orders
+      query = query.eq("user_id", user.id);
+    }
     const { data } = await query;
     if (data) set({ orders: data });
   },
