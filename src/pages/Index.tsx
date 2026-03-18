@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Match } from "@/types/betting";
 import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
@@ -7,7 +7,8 @@ import OrderBook from "@/components/OrderBook";
 import SettlePanel from "@/components/SettlePanel";
 import BottomNav from "@/components/BottomNav";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, TrendingUp, Users, Trophy, Zap } from "lucide-react";
+import { X, TrendingUp, Users, Trophy, Zap, ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useBettingStore } from "@/store/bettingStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,7 +17,9 @@ const Index = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("home");
   const [matches, setMatches] = useState<Match[]>([]);
-  const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
+  const [txAmount, setTxAmount] = useState("");
+  const [txLoading, setTxLoading] = useState(false);
+  const { wallet, orders, transactions, fetchProfile, fetchOrders, deposit, withdraw, fetchTransactions } = useBettingStore();
   const { user } = useAuth();
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
@@ -25,6 +28,7 @@ const Index = () => {
     if (user) {
       fetchProfile();
       fetchOrders();
+      fetchTransactions();
       loadMatches();
     }
   }, [user]);
@@ -128,6 +132,50 @@ const Index = () => {
             <p className="text-xs text-muted-foreground mb-1">Available Balance</p>
             <p className="font-display text-3xl font-extrabold text-primary tabular-nums">₹{wallet.toLocaleString("en-IN")}</p>
           </div>
+
+          {/* Deposit / Withdraw */}
+          <div className="rounded-xl bg-card border border-border p-4 space-y-3">
+            <input
+              type="number"
+              placeholder="Enter amount (₹)"
+              value={txAmount}
+              onChange={(e) => setTxAmount(e.target.value)}
+              min={1}
+              max={10000}
+              className="w-full rounded-lg bg-background border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 tabular-nums"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                disabled={txLoading || !txAmount || Number(txAmount) <= 0}
+                onClick={async () => {
+                  setTxLoading(true);
+                  const res = await deposit(Number(txAmount));
+                  if (res.error) { toast.error(res.error); } else { toast.success(`₹${txAmount} deposited!`); setTxAmount(""); }
+                  setTxLoading(false);
+                }}
+                className="flex items-center justify-center gap-2 rounded-lg bg-primary text-primary-foreground py-3 text-sm font-bold hover:bg-primary/90 transition-colors disabled:opacity-50"
+              >
+                {txLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowDownToLine className="h-4 w-4" />}
+                Deposit
+              </button>
+              <button
+                disabled={txLoading || !txAmount || Number(txAmount) <= 0}
+                onClick={async () => {
+                  setTxLoading(true);
+                  const res = await withdraw(Number(txAmount));
+                  if (res.error) { toast.error(res.error); } else { toast.success(`₹${txAmount} withdrawn!`); setTxAmount(""); }
+                  setTxLoading(false);
+                }}
+                className="flex items-center justify-center gap-2 rounded-lg bg-muted text-foreground py-3 text-sm font-bold hover:bg-secondary transition-colors disabled:opacity-50"
+              >
+                {txLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpFromLine className="h-4 w-4" />}
+                Withdraw
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center">Max ₹10,000 per deposit</p>
+          </div>
+
+          {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-card border border-border p-4 text-center">
               <TrendingUp className="h-5 w-5 text-primary mx-auto mb-2" />
@@ -141,6 +189,32 @@ const Index = () => {
               </p>
               <p className="text-[10px] text-muted-foreground">Total Winnings</p>
             </div>
+          </div>
+
+          {/* Transaction History */}
+          <div>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Recent Transactions</h3>
+            {transactions.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No transactions yet</p>
+            ) : (
+              <div className="space-y-2">
+                {transactions.map((tx: any) => (
+                  <div key={tx.id} className="flex items-center justify-between rounded-lg bg-card border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      {tx.type === "deposit" ? (
+                        <ArrowDownToLine className="h-4 w-4 text-primary" />
+                      ) : (
+                        <ArrowUpFromLine className="h-4 w-4 text-destructive" />
+                      )}
+                      <span className="text-sm font-medium capitalize">{tx.type}</span>
+                    </div>
+                    <span className={`text-sm font-bold tabular-nums ${tx.type === "deposit" ? "text-primary" : "text-destructive"}`}>
+                      {tx.type === "deposit" ? "+" : "-"}₹{Number(tx.amount).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       )}
