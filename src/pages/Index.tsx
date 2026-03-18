@@ -16,7 +16,9 @@ const Index = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("home");
   const [matches, setMatches] = useState<Match[]>([]);
-  const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
+  const [txAmount, setTxAmount] = useState("");
+  const [txLoading, setTxLoading] = useState(false);
+  const { wallet, orders, transactions, fetchProfile, fetchOrders, deposit, withdraw, fetchTransactions } = useBettingStore();
   const { user } = useAuth();
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
