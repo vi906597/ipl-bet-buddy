@@ -303,9 +303,9 @@ const Index = () => {
                 <BettingPanel match={selectedMatch} />
                 <div>
                   <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    My Bets
+                    All Bets
                   </h3>
-                  <OrderBook matchId={selectedMatchId!} />
+                  <AllBets match={selectedMatch} />
                   <div className="mt-3">
                     <SettlePanel match={selectedMatch} />
                   </div>
