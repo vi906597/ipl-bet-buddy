@@ -8,6 +8,7 @@ import SettlePanel from "@/components/SettlePanel";
 import BottomNav from "@/components/BottomNav";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, TrendingUp, Users, Trophy, Zap, ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useBettingStore } from "@/store/bettingStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
