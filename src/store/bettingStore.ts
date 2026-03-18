@@ -8,10 +8,14 @@ interface BettingState {
   wallet: number;
   orders: Order[];
   loading: boolean;
+  transactions: any[];
   fetchProfile: () => Promise<void>;
   fetchOrders: (matchId?: string) => Promise<void>;
   placeOrder: (matchId: string, teamId: string, teamName: string, opponentName: string, amount: number) => Promise<{ status: string; error?: string }>;
   settleMatch: (matchId: string, winnerTeamId: string) => Promise<void>;
+  deposit: (amount: number) => Promise<{ status?: string; error?: string }>;
+  withdraw: (amount: number) => Promise<{ status?: string; error?: string }>;
+  fetchTransactions: () => Promise<void>;
 }
 
 export const useBettingStore = create<BettingState>((set, get) => ({
