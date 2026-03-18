@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Match } from "@/types/betting";
 import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
