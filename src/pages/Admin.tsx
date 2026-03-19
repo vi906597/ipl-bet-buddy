@@ -30,6 +30,7 @@ const Admin = () => {
   const [adminKeyInput, setAdminKeyInput] = useState("");
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [adminTab, setAdminTab] = useState<"matches" | "payments" | "qr">("matches");
 
   // New match form
   const [showForm, setShowForm] = useState(false);
