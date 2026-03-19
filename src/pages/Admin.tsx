@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, Plus, Trophy, Trash2, Play, CheckCircle, Shield } from "lucide-react";
+import AdminDepositsWithdrawals from "@/components/AdminDepositsWithdrawals";
+import AdminQrManager from "@/components/AdminQrManager";
 
 const ADMIN_KEY = "ipl-admin-2026-secret";
 
