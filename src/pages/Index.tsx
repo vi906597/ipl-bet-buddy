@@ -7,9 +7,10 @@ import OrderBook from "@/components/OrderBook";
 import AllBets from "@/components/AllBets";
 import SettlePanel from "@/components/SettlePanel";
 import BottomNav from "@/components/BottomNav";
+import DepositPanel from "@/components/DepositPanel";
+import WithdrawPanel from "@/components/WithdrawPanel";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, TrendingUp, Users, Trophy, Zap, ArrowDownToLine, ArrowUpFromLine, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { X, TrendingUp, Users, Trophy, Zap, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { useBettingStore } from "@/store/bettingStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,9 +19,8 @@ const Index = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("home");
   const [matches, setMatches] = useState<Match[]>([]);
-  const [txAmount, setTxAmount] = useState("");
-  const [txLoading, setTxLoading] = useState(false);
-  const { wallet, orders, transactions, fetchProfile, fetchOrders, deposit, withdraw, fetchTransactions } = useBettingStore();
+  const [walletTab, setWalletTab] = useState<"deposit" | "withdraw">("deposit");
+  const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
   const { user } = useAuth();
 
   const selectedMatch = matches.find((m) => m.id === selectedMatchId);
