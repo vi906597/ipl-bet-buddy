@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      deposit_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          screenshot_url: string | null
+          status: string
+          updated_at: string
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          screenshot_url?: string | null
+          status?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          screenshot_url?: string | null
+          status?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           created_at: string
@@ -145,6 +178,30 @@ export type Database = {
         }
         Relationships: []
       }
+      qr_codes: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          is_active: boolean
+          label: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          is_active?: boolean
+          label?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          label?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -168,6 +225,54 @@ export type Database = {
           id?: string
           status?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      withdraw_requests: {
+        Row: {
+          account_holder_name: string | null
+          account_number: string | null
+          amount: number
+          bank_name: string | null
+          created_at: string
+          id: string
+          ifsc_code: string | null
+          method: string
+          status: string
+          updated_at: string
+          upi_id: string | null
+          user_email: string | null
+          user_id: string
+        }
+        Insert: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          amount: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          ifsc_code?: string | null
+          method?: string
+          status?: string
+          updated_at?: string
+          upi_id?: string | null
+          user_email?: string | null
+          user_id: string
+        }
+        Update: {
+          account_holder_name?: string | null
+          account_number?: string | null
+          amount?: number
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          ifsc_code?: string | null
+          method?: string
+          status?: string
+          updated_at?: string
+          upi_id?: string | null
+          user_email?: string | null
           user_id?: string
         }
         Relationships: []

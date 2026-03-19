@@ -21,110 +21,165 @@ Deno.serve(async (req) => {
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
-    // Verify user is authenticated
-    const anonClient = createClient(
-      supabaseUrl,
-      Deno.env.get("SUPABASE_ANON_KEY")!
-    );
-    const {
-      data: { user },
-    } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
+    const { data: { user } } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (!user) throw new Error("Unauthorized");
 
     const body = await req.json();
     const { action, adminKey } = body;
 
-    // Simple admin key check
     if (adminKey !== ADMIN_SECRET) {
-      return new Response(
-        JSON.stringify({ error: "Invalid admin key" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid admin key" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
+    const json = (data: any) => new Response(JSON.stringify(data), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+    // ============ MATCHES ============
     if (action === "list_matches") {
-      const { data, error } = await supabase
-        .from("matches")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("matches").select("*").order("created_at", { ascending: false });
       if (error) throw error;
-      return new Response(JSON.stringify({ matches: data }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ matches: data });
     }
 
     if (action === "add_match") {
       const { match } = body;
       const { data, error } = await supabase.from("matches").insert({
-        match_key: match.match_key,
-        team_a_id: match.team_a_id,
-        team_a_name: match.team_a_name,
-        team_a_short: match.team_a_short,
-        team_b_id: match.team_b_id,
-        team_b_name: match.team_b_name,
-        team_b_short: match.team_b_short,
-        status: match.status || "upcoming",
-        start_time: match.start_time,
+        match_key: match.match_key, team_a_id: match.team_a_id, team_a_name: match.team_a_name,
+        team_a_short: match.team_a_short, team_b_id: match.team_b_id, team_b_name: match.team_b_name,
+        team_b_short: match.team_b_short, status: match.status || "upcoming", start_time: match.start_time,
       }).select().single();
       if (error) throw error;
-      return new Response(JSON.stringify({ match: data }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ match: data });
     }
 
     if (action === "update_status") {
       const { match_key, status } = body;
-      const { error } = await supabase
-        .from("matches")
-        .update({ status })
-        .eq("match_key", match_key);
+      const { error } = await supabase.from("matches").update({ status }).eq("match_key", match_key);
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ success: true });
     }
 
     if (action === "settle") {
       const { match_key, winner_team_id } = body;
-      // First settle orders via existing RPC
       const { data: settleResult, error: settleErr } = await supabase.rpc("settle_match", {
-        p_match_id: match_key,
-        p_winner_team_id: winner_team_id,
+        p_match_id: match_key, p_winner_team_id: winner_team_id,
       });
       if (settleErr) throw settleErr;
-
-      // Update match status
-      await supabase
-        .from("matches")
-        .update({ status: "completed", winner_team_id })
-        .eq("match_key", match_key);
-
-      return new Response(
-        JSON.stringify({ success: true, settled: settleResult }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      await supabase.from("matches").update({ status: "completed", winner_team_id }).eq("match_key", match_key);
+      return json({ success: true, settled: settleResult });
     }
 
     if (action === "delete_match") {
       const { match_key } = body;
-      const { error } = await supabase
-        .from("matches")
-        .delete()
-        .eq("match_key", match_key);
+      const { error } = await supabase.from("matches").delete().eq("match_key", match_key);
       if (error) throw error;
-      return new Response(JSON.stringify({ success: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ success: true });
+    }
+
+    // ============ DEPOSITS ============
+    if (action === "list_deposits") {
+      const { data, error } = await supabase.from("deposit_requests").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return json({ deposits: data });
+    }
+
+    if (action === "update_deposit") {
+      const { deposit_id, status } = body;
+      // Get deposit info first
+      const { data: dep, error: depErr } = await supabase.from("deposit_requests").select("*").eq("id", deposit_id).single();
+      if (depErr) throw depErr;
+
+      const { error } = await supabase.from("deposit_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", deposit_id);
+      if (error) throw error;
+
+      // If approved, add to wallet
+      if (status === "approved" && dep) {
+        await supabase.from("profiles").update({ wallet: undefined }).eq("user_id", dep.user_id); // dummy to check existence
+        // Use raw SQL via RPC or direct update
+        const { data: profile } = await supabase.from("profiles").select("wallet").eq("user_id", dep.user_id).single();
+        if (profile) {
+          await supabase.from("profiles").update({ wallet: profile.wallet + dep.amount, updated_at: new Date().toISOString() }).eq("user_id", dep.user_id);
+        }
+      }
+      return json({ success: true });
+    }
+
+    // ============ WITHDRAWALS ============
+    if (action === "list_withdrawals") {
+      const { data, error } = await supabase.from("withdraw_requests").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return json({ withdrawals: data });
+    }
+
+    if (action === "update_withdrawal") {
+      const { withdrawal_id, status } = body;
+      const { data: wr, error: wrErr } = await supabase.from("withdraw_requests").select("*").eq("id", withdrawal_id).single();
+      if (wrErr) throw wrErr;
+
+      const { error } = await supabase.from("withdraw_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", withdrawal_id);
+      if (error) throw error;
+
+      // If approved, deduct from wallet
+      if (status === "approved" && wr) {
+        const { data: profile } = await supabase.from("profiles").select("wallet").eq("user_id", wr.user_id).single();
+        if (profile) {
+          const newBalance = Math.max(0, profile.wallet - wr.amount);
+          await supabase.from("profiles").update({ wallet: newBalance, updated_at: new Date().toISOString() }).eq("user_id", wr.user_id);
+        }
+      }
+      return json({ success: true });
+    }
+
+    // ============ QR CODES ============
+    if (action === "list_qr_codes") {
+      const { data, error } = await supabase.from("qr_codes").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return json({ qr_codes: data });
+    }
+
+    if (action === "add_qr_code") {
+      const { label, image_url } = body;
+      // Deactivate existing QR codes
+      await supabase.from("qr_codes").update({ is_active: false }).eq("is_active", true);
+      const { error } = await supabase.from("qr_codes").insert({ label: label || "", image_url, is_active: true });
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    if (action === "delete_qr_code") {
+      const { qr_id } = body;
+      const { error } = await supabase.from("qr_codes").delete().eq("id", qr_id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ============ ADMIN WALLET UPDATE ============
+    if (action === "admin_wallet_update") {
+      const { email, amount, wallet_action } = body;
+      // Find user by email
+      const { data: users, error: userErr } = await supabase.auth.admin.listUsers();
+      if (userErr) throw userErr;
+      const targetUser = users.users.find((u: any) => u.email === email);
+      if (!targetUser) throw new Error("User not found");
+
+      const { data: profile } = await supabase.from("profiles").select("wallet").eq("user_id", targetUser.id).single();
+      if (!profile) throw new Error("Profile not found");
+
+      const newBalance = wallet_action === "add" ? profile.wallet + amount : Math.max(0, profile.wallet - amount);
+      await supabase.from("profiles").update({ wallet: newBalance, updated_at: new Date().toISOString() }).eq("user_id", targetUser.id);
+      return json({ success: true, new_balance: newBalance });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: err.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

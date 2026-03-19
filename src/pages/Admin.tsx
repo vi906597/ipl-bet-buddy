@@ -4,6 +4,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, Plus, Trophy, Trash2, Play, CheckCircle, Shield } from "lucide-react";
+import AdminDepositsWithdrawals from "@/components/AdminDepositsWithdrawals";
+import AdminQrManager from "@/components/AdminQrManager";
 
 const ADMIN_KEY = "ipl-admin-2026-secret";
 
@@ -28,6 +30,7 @@ const Admin = () => {
   const [adminKeyInput, setAdminKeyInput] = useState("");
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(false);
+  const [adminTab, setAdminTab] = useState<"matches" | "payments" | "qr">("matches");
 
   // New match form
   const [showForm, setShowForm] = useState(false);
@@ -154,111 +157,115 @@ const Admin = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-4">
-        <div className="flex items-center justify-between">
-          <h1 className="font-display text-xl font-extrabold flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" /> Admin Panel
-          </h1>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Match
-          </button>
+        <h1 className="font-display text-xl font-extrabold flex items-center gap-2">
+          <Shield className="h-5 w-5 text-primary" /> Admin Panel
+        </h1>
+
+        {/* Admin Tabs */}
+        <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+          {(["matches", "payments", "qr"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setAdminTab(t)}
+              className={`rounded-md py-2 text-xs font-bold capitalize transition-colors ${
+                adminTab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              }`}
+            >
+              {t === "qr" ? "QR Codes" : t}
+            </button>
+          ))}
         </div>
 
-        {/* Add Match Form */}
-        {showForm && (
-          <form onSubmit={addMatch} className="rounded-xl bg-card border border-border p-4 space-y-3">
-            <h3 className="text-sm font-bold">New Match</h3>
-            <input
-              placeholder="Match Key (e.g. mi-vs-csk)"
-              value={form.match_key}
-              onChange={(e) => setForm({ ...form, match_key: e.target.value })}
-              required
-              className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm"
-            />
-            <div className="grid grid-cols-3 gap-2">
-              <input placeholder="Team A ID" value={form.team_a_id} onChange={(e) => setForm({ ...form, team_a_id: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
-              <input placeholder="Team A Name" value={form.team_a_name} onChange={(e) => setForm({ ...form, team_a_name: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
-              <input placeholder="Short (e.g. MI)" value={form.team_a_short} onChange={(e) => setForm({ ...form, team_a_short: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+        {adminTab === "matches" && (
+          <>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowForm(!showForm)}
+                className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Match
+              </button>
             </div>
-            <div className="grid grid-cols-3 gap-2">
-              <input placeholder="Team B ID" value={form.team_b_id} onChange={(e) => setForm({ ...form, team_b_id: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
-              <input placeholder="Team B Name" value={form.team_b_name} onChange={(e) => setForm({ ...form, team_b_name: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
-              <input placeholder="Short (e.g. CSK)" value={form.team_b_short} onChange={(e) => setForm({ ...form, team_b_short: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
-            </div>
-            <input
-              type="datetime-local"
-              value={form.start_time}
-              onChange={(e) => setForm({ ...form, start_time: e.target.value })}
-              required
-              className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm"
-            />
-            <div className="flex gap-2">
-              <button type="submit" className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-xs font-bold">Save</button>
-              <button type="button" onClick={() => setShowForm(false)} className="rounded-lg bg-muted px-4 py-2 text-xs font-bold text-muted-foreground">Cancel</button>
-            </div>
-          </form>
-        )}
 
-        {/* Match List */}
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          </div>
-        ) : matches.length === 0 ? (
-          <div className="text-center py-10 text-muted-foreground text-sm">No matches yet. Add one!</div>
-        ) : (
-          <div className="space-y-3">
-            {matches.map((m) => (
-              <div key={m.id} className="rounded-xl bg-card border border-border p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-bold">
-                      <span className="text-primary">{m.team_a_short}</span>
-                      <span className="text-muted-foreground mx-1">vs</span>
-                      <span className="text-accent">{m.team_b_short}</span>
-                    </p>
-                    <p className="text-[10px] text-muted-foreground">{m.match_key} · {new Date(m.start_time).toLocaleString()}</p>
+            {showForm && (
+              <form onSubmit={addMatch} className="rounded-xl bg-card border border-border p-4 space-y-3">
+                <h3 className="text-sm font-bold">New Match</h3>
+                <input placeholder="Match Key (e.g. mi-vs-csk)" value={form.match_key} onChange={(e) => setForm({ ...form, match_key: e.target.value })} required className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                <div className="grid grid-cols-3 gap-2">
+                  <input placeholder="Team A ID" value={form.team_a_id} onChange={(e) => setForm({ ...form, team_a_id: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                  <input placeholder="Team A Name" value={form.team_a_name} onChange={(e) => setForm({ ...form, team_a_name: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                  <input placeholder="Short (e.g. MI)" value={form.team_a_short} onChange={(e) => setForm({ ...form, team_a_short: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <input placeholder="Team B ID" value={form.team_b_id} onChange={(e) => setForm({ ...form, team_b_id: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                  <input placeholder="Team B Name" value={form.team_b_name} onChange={(e) => setForm({ ...form, team_b_name: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                  <input placeholder="Short (e.g. CSK)" value={form.team_b_short} onChange={(e) => setForm({ ...form, team_b_short: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                </div>
+                <input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} required className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                <div className="flex gap-2">
+                  <button type="submit" className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-xs font-bold">Save</button>
+                  <button type="button" onClick={() => setShowForm(false)} className="rounded-lg bg-muted px-4 py-2 text-xs font-bold text-muted-foreground">Cancel</button>
+                </div>
+              </form>
+            )}
+
+            {loading ? (
+              <div className="flex justify-center py-10"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            ) : matches.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">No matches yet. Add one!</div>
+            ) : (
+              <div className="space-y-3">
+                {matches.map((m) => (
+                  <div key={m.id} className="rounded-xl bg-card border border-border p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-bold">
+                          <span className="text-primary">{m.team_a_short}</span>
+                          <span className="text-muted-foreground mx-1">vs</span>
+                          <span className="text-accent">{m.team_b_short}</span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">{m.match_key} · {new Date(m.start_time).toLocaleString()}</p>
+                      </div>
+                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                        m.status === "live" ? "bg-green-500/20 text-green-400" :
+                        m.status === "completed" ? "bg-muted text-muted-foreground" :
+                        "bg-primary/20 text-primary"
+                      }`}>{m.status}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {m.status === "upcoming" && (
+                        <button onClick={() => updateStatus(m.match_key, "live")} className="flex items-center gap-1 rounded-lg bg-green-500/20 text-green-400 px-3 py-1.5 text-xs font-bold">
+                          <Play className="h-3 w-3" /> Go Live
+                        </button>
+                      )}
+                      {m.status === "live" && (
+                        <>
+                          <button onClick={() => settleMatch(m.match_key, m.team_a_id)} className="flex items-center gap-1 rounded-lg bg-primary/20 text-primary px-3 py-1.5 text-xs font-bold">
+                            <Trophy className="h-3 w-3" /> {m.team_a_short} Wins
+                          </button>
+                          <button onClick={() => settleMatch(m.match_key, m.team_b_id)} className="flex items-center gap-1 rounded-lg bg-accent/20 text-accent px-3 py-1.5 text-xs font-bold">
+                            <Trophy className="h-3 w-3" /> {m.team_b_short} Wins
+                          </button>
+                        </>
+                      )}
+                      {m.status === "completed" && m.winner_team_id && (
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <CheckCircle className="h-3 w-3" /> Winner: {m.winner_team_id === m.team_a_id ? m.team_a_short : m.team_b_short}
+                        </span>
+                      )}
+                      <button onClick={() => deleteMatch(m.match_key)} className="flex items-center gap-1 rounded-lg bg-destructive/20 text-destructive px-3 py-1.5 text-xs font-bold ml-auto">
+                        <Trash2 className="h-3 w-3" /> Delete
+                      </button>
+                    </div>
                   </div>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                    m.status === "live" ? "bg-green-500/20 text-green-400" :
-                    m.status === "completed" ? "bg-muted text-muted-foreground" :
-                    "bg-primary/20 text-primary"
-                  }`}>
-                    {m.status}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {m.status === "upcoming" && (
-                    <button onClick={() => updateStatus(m.match_key, "live")} className="flex items-center gap-1 rounded-lg bg-green-500/20 text-green-400 px-3 py-1.5 text-xs font-bold">
-                      <Play className="h-3 w-3" /> Go Live
-                    </button>
-                  )}
-                  {m.status === "live" && (
-                    <>
-                      <button onClick={() => settleMatch(m.match_key, m.team_a_id)} className="flex items-center gap-1 rounded-lg bg-primary/20 text-primary px-3 py-1.5 text-xs font-bold">
-                        <Trophy className="h-3 w-3" /> {m.team_a_short} Wins
-                      </button>
-                      <button onClick={() => settleMatch(m.match_key, m.team_b_id)} className="flex items-center gap-1 rounded-lg bg-accent/20 text-accent px-3 py-1.5 text-xs font-bold">
-                        <Trophy className="h-3 w-3" /> {m.team_b_short} Wins
-                      </button>
-                    </>
-                  )}
-                  {m.status === "completed" && m.winner_team_id && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <CheckCircle className="h-3 w-3" /> Winner: {m.winner_team_id === m.team_a_id ? m.team_a_short : m.team_b_short}
-                    </span>
-                  )}
-                  <button onClick={() => deleteMatch(m.match_key)} className="flex items-center gap-1 rounded-lg bg-destructive/20 text-destructive px-3 py-1.5 text-xs font-bold ml-auto">
-                    <Trash2 className="h-3 w-3" /> Delete
-                  </button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
+
+        {adminTab === "payments" && <AdminDepositsWithdrawals />}
+        {adminTab === "qr" && <AdminQrManager />}
       </div>
     </div>
   );
