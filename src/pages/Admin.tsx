@@ -1,11 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, Plus, Trophy, Trash2, Play, CheckCircle, Shield } from "lucide-react";
+import { Loader2, Plus, Trophy, Trash2, Play, CheckCircle, Shield, Users, CreditCard } from "lucide-react";
 import AdminDepositsWithdrawals from "@/components/AdminDepositsWithdrawals";
 import AdminQrManager from "@/components/AdminQrManager";
+import AdminUserManager from "@/components/AdminUserManager";
+import AdminLeaderboard from "@/components/AdminLeaderboard";
+import AdminPaymentSettings from "@/components/AdminPaymentSettings";
 
 const ADMIN_KEY = "ipl-admin-2026-secret";
 
@@ -30,25 +33,17 @@ const Admin = () => {
   const [adminKeyInput, setAdminKeyInput] = useState("");
   const [matches, setMatches] = useState<MatchRow[]>([]);
   const [loading, setLoading] = useState(false);
-  const [adminTab, setAdminTab] = useState<"matches" | "payments" | "qr">("matches");
+  const [adminTab, setAdminTab] = useState<"matches" | "payments" | "qr" | "users" | "leaderboard" | "settings">("matches");
 
-  // New match form
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
-    match_key: "",
-    team_a_id: "",
-    team_a_name: "",
-    team_a_short: "",
-    team_b_id: "",
-    team_b_name: "",
-    team_b_short: "",
-    start_time: "",
+    match_key: "", team_a_id: "", team_a_name: "", team_a_short: "",
+    team_b_id: "", team_b_name: "", team_b_short: "", start_time: "",
   });
 
   const callAdmin = async (body: any) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Not logged in");
-
     const res = await supabase.functions.invoke("admin-matches", {
       body: { ...body, adminKey: ADMIN_KEY },
     });
@@ -62,11 +57,8 @@ const Admin = () => {
     try {
       const data = await callAdmin({ action: "list_matches" });
       setMatches(data.matches || []);
-    } catch (err: any) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { toast.error(err.message); }
+    setLoading(false);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -87,9 +79,7 @@ const Admin = () => {
       setShowForm(false);
       setForm({ match_key: "", team_a_id: "", team_a_name: "", team_a_short: "", team_b_id: "", team_b_name: "", team_b_short: "", start_time: "" });
       fetchMatches();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const updateStatus = async (matchKey: string, status: string) => {
@@ -97,9 +87,7 @@ const Admin = () => {
       await callAdmin({ action: "update_status", match_key: matchKey, status });
       toast.success(`Status → ${status}`);
       fetchMatches();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const settleMatch = async (matchKey: string, winnerId: string) => {
@@ -107,9 +95,7 @@ const Admin = () => {
       await callAdmin({ action: "settle", match_key: matchKey, winner_team_id: winnerId });
       toast.success("Match settled!");
       fetchMatches();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
   const deleteMatch = async (matchKey: string) => {
@@ -118,9 +104,7 @@ const Admin = () => {
       await callAdmin({ action: "delete_match", match_key: matchKey });
       toast.success("Deleted");
       fetchMatches();
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
   if (authLoading) return null;
@@ -135,24 +119,21 @@ const Admin = () => {
             <h1 className="font-display text-xl font-extrabold">Admin Panel</h1>
             <p className="text-xs text-muted-foreground">Enter admin key to access</p>
           </div>
-          <input
-            type="password"
-            placeholder="Admin Key"
-            value={adminKeyInput}
-            onChange={(e) => setAdminKeyInput(e.target.value)}
-            required
-            className="w-full rounded-xl bg-card border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-          />
-          <button
-            type="submit"
-            className="w-full rounded-xl bg-primary text-primary-foreground py-3 text-sm font-bold"
-          >
-            Access Admin
-          </button>
+          <input type="password" placeholder="Admin Key" value={adminKeyInput} onChange={(e) => setAdminKeyInput(e.target.value)} required className="w-full rounded-xl bg-card border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+          <button type="submit" className="w-full rounded-xl bg-primary text-primary-foreground py-3 text-sm font-bold">Access Admin</button>
         </form>
       </div>
     );
   }
+
+  const tabs = [
+    { id: "matches" as const, label: "Matches" },
+    { id: "payments" as const, label: "Payments" },
+    { id: "qr" as const, label: "QR" },
+    { id: "users" as const, label: "Users" },
+    { id: "leaderboard" as const, label: "Board" },
+    { id: "settings" as const, label: "Settings" },
+  ];
 
   return (
     <div className="min-h-screen bg-background p-4">
@@ -161,17 +142,17 @@ const Admin = () => {
           <Shield className="h-5 w-5 text-primary" /> Admin Panel
         </h1>
 
-        {/* Admin Tabs */}
-        <div className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
-          {(["matches", "payments", "qr"] as const).map((t) => (
+        {/* Admin Tabs - scrollable */}
+        <div className="flex gap-1 rounded-lg bg-muted p-1 overflow-x-auto">
+          {tabs.map((t) => (
             <button
-              key={t}
-              onClick={() => setAdminTab(t)}
-              className={`rounded-md py-2 text-xs font-bold capitalize transition-colors ${
-                adminTab === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+              key={t.id}
+              onClick={() => setAdminTab(t.id)}
+              className={`whitespace-nowrap rounded-md px-3 py-2 text-xs font-bold capitalize transition-colors ${
+                adminTab === t.id ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
               }`}
             >
-              {t === "qr" ? "QR Codes" : t}
+              {t.label}
             </button>
           ))}
         </div>
@@ -179,10 +160,7 @@ const Admin = () => {
         {adminTab === "matches" && (
           <>
             <div className="flex justify-end">
-              <button
-                onClick={() => setShowForm(!showForm)}
-                className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold"
-              >
+              <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-2 text-xs font-bold">
                 <Plus className="h-3.5 w-3.5" /> Add Match
               </button>
             </div>
@@ -266,6 +244,9 @@ const Admin = () => {
 
         {adminTab === "payments" && <AdminDepositsWithdrawals />}
         {adminTab === "qr" && <AdminQrManager />}
+        {adminTab === "users" && <AdminUserManager />}
+        {adminTab === "leaderboard" && <AdminLeaderboard />}
+        {adminTab === "settings" && <AdminPaymentSettings />}
       </div>
     </div>
   );
