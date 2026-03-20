@@ -47,6 +47,33 @@ export type Database = {
         }
         Relationships: []
       }
+      leaderboard_entries: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          name: string
+          rank_position: number
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          name: string
+          rank_position?: number
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          name?: string
+          rank_position?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           created_at: string
@@ -180,6 +207,7 @@ export type Database = {
       }
       qr_codes: {
         Row: {
+          amount: number | null
           created_at: string
           id: string
           image_url: string
@@ -187,6 +215,7 @@ export type Database = {
           label: string
         }
         Insert: {
+          amount?: number | null
           created_at?: string
           id?: string
           image_url: string
@@ -194,11 +223,36 @@ export type Database = {
           label?: string
         }
         Update: {
+          amount?: number | null
           created_at?: string
           id?: string
           image_url?: string
           is_active?: boolean
           label?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }
