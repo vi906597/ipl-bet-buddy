@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import type { Match } from "@/types/betting";
 import WalletBar from "@/components/WalletBar";
 import MatchCard from "@/components/MatchCard";
@@ -15,11 +15,16 @@ import { useBettingStore } from "@/store/bettingStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+interface LeaderEntry {
+  id: string; name: string; amount: number;
+}
+
 const Index = () => {
   const [selectedMatchId, setSelectedMatchId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("home");
   const [matches, setMatches] = useState<Match[]>([]);
   const [walletTab, setWalletTab] = useState<"deposit" | "withdraw">("deposit");
+  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
   const { user } = useAuth();
 
@@ -30,7 +35,7 @@ const Index = () => {
       fetchProfile();
       fetchOrders();
       loadMatches();
-      loadMatches();
+      loadLeaderboard();
     }
   }, [user]);
 
@@ -52,12 +57,13 @@ const Index = () => {
     }
   };
 
-  useEffect(() => {
-    if (user) {
-      fetchProfile();
-      fetchOrders();
-    }
-  }, [user]);
+  const loadLeaderboard = async () => {
+    const { data } = await supabase
+      .from("leaderboard_entries")
+      .select("*")
+      .order("rank_position", { ascending: true });
+    if (data) setLeaderboard(data as any);
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
@@ -134,7 +140,6 @@ const Index = () => {
             <p className="font-display text-3xl font-extrabold text-primary tabular-nums">₹{wallet.toLocaleString("en-IN")}</p>
           </div>
 
-          {/* Deposit / Withdraw Toggle */}
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
             <button
               onClick={() => setWalletTab("deposit")}
@@ -156,7 +161,6 @@ const Index = () => {
 
           {walletTab === "deposit" ? <DepositPanel /> : <WithdrawPanel />}
 
-          {/* Stats */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-card border border-border p-4 text-center">
               <TrendingUp className="h-5 w-5 text-primary mx-auto mb-2" />
@@ -177,19 +181,23 @@ const Index = () => {
       {activeTab === "leaderboard" && (
         <main className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-4">
           <h2 className="font-display text-lg font-bold">Leaderboard</h2>
-          <div className="space-y-2">
-            {["ProBetter99", "CricketKing", "IPLMaster", "You", "StakeGuru"].map((name, i) => (
-              <div key={name} className={`rounded-lg p-3 flex items-center justify-between border ${name === "You" ? "bg-primary/10 border-primary/30" : "bg-card border-border"}`}>
-                <div className="flex items-center gap-3">
-                  <span className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${i < 3 ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
-                    {i + 1}
-                  </span>
-                  <span className={`text-sm font-semibold ${name === "You" ? "text-primary" : ""}`}>{name}</span>
+          {leaderboard.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6">Leaderboard coming soon</p>
+          ) : (
+            <div className="space-y-2">
+              {leaderboard.map((entry, i) => (
+                <div key={entry.id} className={`rounded-lg p-3 flex items-center justify-between border bg-card border-border`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold ${i < 3 ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"}`}>
+                      {i + 1}
+                    </span>
+                    <span className="text-sm font-semibold">{entry.name}</span>
+                  </div>
+                  <span className="text-sm font-bold tabular-nums">₹{Number(entry.amount).toLocaleString("en-IN")}</span>
                 </div>
-                <span className="text-sm font-bold tabular-nums">₹{(50000 - i * 8000).toLocaleString("en-IN")}</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </main>
       )}
 
@@ -260,9 +268,6 @@ const Index = () => {
                     All Bets
                   </h3>
                   <AllBets match={selectedMatch} />
-                  <div className="mt-3">
-                    <SettlePanel match={selectedMatch} />
-                  </div>
                 </div>
               </div>
             </motion.div>

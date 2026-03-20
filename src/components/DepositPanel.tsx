@@ -23,22 +23,45 @@ const DepositPanel = () => {
   const [deposits, setDeposits] = useState<DepositRequest[]>([]);
   const [uploading, setUploading] = useState<string | null>(null);
   const [qrImageUrl, setQrImageUrl] = useState<string>(paymentQrFallback);
+  const [paymentMode, setPaymentMode] = useState<string>("manual");
 
   useEffect(() => {
     if (user) {
       fetchDeposits();
-      fetchQrCode();
+      fetchPaymentMode();
     }
   }, [user]);
 
-  const fetchQrCode = async () => {
+  const fetchPaymentMode = async () => {
+    const { data } = await supabase
+      .from("site_settings")
+      .select("value")
+      .eq("key", "payment_mode")
+      .maybeSingle();
+    if (data?.value) setPaymentMode(data.value);
+  };
+
+  const fetchQrForAmount = async (amount: number) => {
+    // Try to find QR for this specific amount
     const { data } = await supabase
       .from("qr_codes")
       .select("image_url")
       .eq("is_active", true)
+      .eq("amount", amount)
       .limit(1)
       .maybeSingle();
-    if (data?.image_url) setQrImageUrl(data.image_url);
+    if (data?.image_url) {
+      setQrImageUrl(data.image_url);
+    } else {
+      // Fallback to any active QR
+      const { data: fallback } = await supabase
+        .from("qr_codes")
+        .select("image_url")
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      setQrImageUrl(fallback?.image_url || paymentQrFallback);
+    }
   };
 
   const fetchDeposits = async () => {
@@ -49,12 +72,41 @@ const DepositPanel = () => {
     if (data) setDeposits(data as any);
   };
 
-  const handleAmountClick = (amount: number) => {
+  const handleAmountClick = async (amount: number) => {
     setSelectedAmount(amount);
+
+    if (paymentMode === "gateway") {
+      // Use Bharat4U payment gateway
+      try {
+        const res = await supabase.functions.invoke("bharat4u-payin", {
+          body: { amount },
+        });
+        if (res.error) throw new Error(res.error.message);
+        if (res.data?.error) throw new Error(res.data.error);
+        if (res.data?.payment_url) {
+          // Save deposit request first
+          await supabase.from("deposit_requests").insert({
+            user_id: user!.id,
+            amount,
+            user_email: user!.email || "",
+            status: "pending",
+          });
+          fetchDeposits();
+          // Open payment URL
+          window.open(res.data.payment_url, "_blank");
+          return;
+        }
+      } catch (err: any) {
+        toast.error("Gateway error: " + err.message + ". Showing QR instead.");
+      }
+    }
+
+    // Manual mode - show QR
+    await fetchQrForAmount(amount);
     setShowQr(true);
   };
 
-  const handleDeposit = async () => {
+  const handleConfirmPayment = async () => {
     if (!selectedAmount || !user) return;
     const { error } = await supabase.from("deposit_requests").insert({
       user_id: user.id,
@@ -158,10 +210,10 @@ const DepositPanel = () => {
                 Scan QR with any UPI app and pay ₹{selectedAmount.toLocaleString("en-IN")}
               </p>
               <button
-                onClick={handleDeposit}
+                onClick={handleConfirmPayment}
                 className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-bold"
               >
-                I've Paid – Submit Request
+                ✅ Confirm – I've Paid
               </button>
             </motion.div>
           </>

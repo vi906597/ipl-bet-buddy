@@ -89,17 +89,13 @@ Deno.serve(async (req) => {
 
     if (action === "update_deposit") {
       const { deposit_id, status } = body;
-      // Get deposit info first
       const { data: dep, error: depErr } = await supabase.from("deposit_requests").select("*").eq("id", deposit_id).single();
       if (depErr) throw depErr;
 
       const { error } = await supabase.from("deposit_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", deposit_id);
       if (error) throw error;
 
-      // If approved, add to wallet
       if (status === "approved" && dep) {
-        await supabase.from("profiles").update({ wallet: undefined }).eq("user_id", dep.user_id); // dummy to check existence
-        // Use raw SQL via RPC or direct update
         const { data: profile } = await supabase.from("profiles").select("wallet").eq("user_id", dep.user_id).single();
         if (profile) {
           await supabase.from("profiles").update({ wallet: profile.wallet + dep.amount, updated_at: new Date().toISOString() }).eq("user_id", dep.user_id);
@@ -123,7 +119,6 @@ Deno.serve(async (req) => {
       const { error } = await supabase.from("withdraw_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", withdrawal_id);
       if (error) throw error;
 
-      // If approved, deduct from wallet
       if (status === "approved" && wr) {
         const { data: profile } = await supabase.from("profiles").select("wallet").eq("user_id", wr.user_id).single();
         if (profile) {
@@ -142,10 +137,12 @@ Deno.serve(async (req) => {
     }
 
     if (action === "add_qr_code") {
-      const { label, image_url } = body;
-      // Deactivate existing QR codes
-      await supabase.from("qr_codes").update({ is_active: false }).eq("is_active", true);
-      const { error } = await supabase.from("qr_codes").insert({ label: label || "", image_url, is_active: true });
+      const { label, image_url, amount } = body;
+      // Deactivate existing QR for same amount
+      if (amount) {
+        await supabase.from("qr_codes").update({ is_active: false }).eq("amount", amount).eq("is_active", true);
+      }
+      const { error } = await supabase.from("qr_codes").insert({ label: label || "", image_url, is_active: true, amount: amount || null });
       if (error) throw error;
       return json({ success: true });
     }
@@ -157,10 +154,9 @@ Deno.serve(async (req) => {
       return json({ success: true });
     }
 
-    // ============ ADMIN WALLET UPDATE ============
+    // ============ ADMIN WALLET UPDATE (by email) ============
     if (action === "admin_wallet_update") {
       const { email, amount, wallet_action } = body;
-      // Find user by email
       const { data: users, error: userErr } = await supabase.auth.admin.listUsers();
       if (userErr) throw userErr;
       const targetUser = users.users.find((u: any) => u.email === email);
@@ -172,6 +168,65 @@ Deno.serve(async (req) => {
       const newBalance = wallet_action === "add" ? profile.wallet + amount : Math.max(0, profile.wallet - amount);
       await supabase.from("profiles").update({ wallet: newBalance, updated_at: new Date().toISOString() }).eq("user_id", targetUser.id);
       return json({ success: true, new_balance: newBalance });
+    }
+
+    // ============ ADMIN WALLET UPDATE (by user_id) ============
+    if (action === "admin_wallet_update_by_id") {
+      const { user_id, amount, wallet_action } = body;
+      const { data: profile } = await supabase.from("profiles").select("wallet").eq("user_id", user_id).single();
+      if (!profile) throw new Error("Profile not found");
+
+      const newBalance = wallet_action === "add" ? profile.wallet + amount : Math.max(0, profile.wallet - amount);
+      await supabase.from("profiles").update({ wallet: newBalance, updated_at: new Date().toISOString() }).eq("user_id", user_id);
+      return json({ success: true, new_balance: newBalance });
+    }
+
+    // ============ LIST ALL USERS ============
+    if (action === "list_users") {
+      const { data: authUsers, error: authErr } = await supabase.auth.admin.listUsers();
+      if (authErr) throw authErr;
+      const { data: profiles } = await supabase.from("profiles").select("*");
+      
+      const users = (profiles || []).map((p: any) => {
+        const authUser = authUsers.users.find((u: any) => u.id === p.user_id);
+        return {
+          user_id: p.user_id,
+          username: p.username,
+          wallet: p.wallet,
+          email: authUser?.email || "N/A",
+          created_at: p.created_at,
+        };
+      });
+      return json({ users });
+    }
+
+    // ============ LEADERBOARD ============
+    if (action === "list_leaderboard") {
+      const { data, error } = await supabase.from("leaderboard_entries").select("*").order("rank_position", { ascending: true });
+      if (error) throw error;
+      return json({ entries: data });
+    }
+
+    if (action === "add_leaderboard") {
+      const { name, amount, rank_position } = body;
+      const { error } = await supabase.from("leaderboard_entries").insert({ name, amount, rank_position });
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    if (action === "delete_leaderboard") {
+      const { entry_id } = body;
+      const { error } = await supabase.from("leaderboard_entries").delete().eq("id", entry_id);
+      if (error) throw error;
+      return json({ success: true });
+    }
+
+    // ============ SITE SETTINGS ============
+    if (action === "update_setting") {
+      const { key, value } = body;
+      const { error } = await supabase.from("site_settings").upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
+      if (error) throw error;
+      return json({ success: true });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {

@@ -3,7 +3,7 @@ import type { Match, Team } from "@/types/betting";
 import { STAKE_OPTIONS, COMMISSION_RATE } from "@/types/betting";
 import { useBettingStore } from "@/store/bettingStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, TrendingUp } from "lucide-react";
+import { Loader2, TrendingUp, Lock } from "lucide-react";
 import { toast } from "sonner";
 
 interface BettingPanelProps {
@@ -15,6 +15,10 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
   const [placing, setPlacing] = useState<number | null>(null);
   const { wallet, placeOrder } = useBettingStore();
 
+  const isLive = match.status === "live";
+  const isCompleted = match.status === "completed";
+  const bettingDisabled = isLive || isCompleted;
+
   const calcWinning = (amount: number) => {
     const pot = amount * 2;
     const commission = pot * COMMISSION_RATE;
@@ -22,7 +26,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
   };
 
   const handleStake = async (amount: number) => {
-    if (!selectedTeam || wallet < amount) return;
+    if (!selectedTeam || wallet < amount || bettingDisabled) return;
     setPlacing(amount);
     const opponent = selectedTeam.id === match.teamA.id ? match.teamB : match.teamA;
     const result = await placeOrder(match.id, selectedTeam.id, selectedTeam.shortName, opponent.shortName, amount);
@@ -38,6 +42,20 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
   };
 
   const formatAmount = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K` : `${n}`;
+
+  if (bettingDisabled) {
+    return (
+      <div className="rounded-xl bg-muted/50 border border-border p-6 text-center space-y-2">
+        <Lock className="h-6 w-6 text-muted-foreground mx-auto" />
+        <p className="text-sm font-bold text-muted-foreground">
+          {isLive ? "Betting Closed – Match is Live" : "Match Completed"}
+        </p>
+        <p className="text-xs text-muted-foreground/70">
+          {isLive ? "Betting stops once the match goes live" : "This match has been settled"}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
