@@ -14,7 +14,9 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
   const filtered = matchId ? orders.filter((o) => o.match_id === matchId) : orders;
   const pending = filtered.filter((o) => o.status === "pending");
   const matched = filtered.filter((o) => o.status === "matched");
-  const settled = filtered.filter((o) => o.status === "won" || o.status === "lost");
+const settled = filtered.filter(
+  (o) => o.status === "won" || o.status === "lost" || o.status === "cancelled"
+);
 
   if (filtered.length === 0) {
     return (
@@ -92,32 +94,56 @@ const OrderBook = ({ matchId }: { matchId?: string }) => {
         <Section title="Settled" count={settled.length}>
           {settled.map((order) => (
             <div
-              key={order.id}
-              className={`rounded-lg bg-card p-3 shadow-subtle border-l-4 ${
-                order.status === "won" ? "border-success" : "border-destructive"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {order.status === "won" ? (
-                    <Trophy className="h-3.5 w-3.5 text-success" />
-                  ) : (
-                    <XCircle className="h-3.5 w-3.5 text-destructive" />
-                  )}
-                  <span className="text-sm font-medium">{order.team_name}</span>
-                </div>
-                <span className={`text-sm font-semibold tabular-nums ${
-                  order.status === "won" ? "text-success" : "text-destructive"
-                }`}>
-                  {order.status === "won" ? `+₹${order.payout?.toFixed(0)}` : `-₹${order.amount}`}
-                </span>
-              </div>
-              {order.status === "won" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  ₹{order.commission?.toFixed(0)} commission deducted
-                </p>
-              )}
-            </div>
+  key={order.id}
+  className={`rounded-lg bg-card p-3 shadow-subtle border-l-4 ${
+    order.status === "won"
+      ? "border-success"
+      : order.status === "cancelled"
+      ? "border-green-500"
+      : "border-destructive"
+  }`}
+>
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      {order.status === "won" ? (
+        <Trophy className="h-3.5 w-3.5 text-success" />
+      ) : order.status === "cancelled" ? (
+        <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+      ) : (
+        <XCircle className="h-3.5 w-3.5 text-destructive" />
+      )}
+      <span className="text-sm font-medium">{order.team_name}</span>
+    </div>
+
+    <span
+      className={`text-sm font-semibold tabular-nums ${
+        order.status === "won"
+          ? "text-success"
+          : order.status === "cancelled"
+          ? "text-green-500"
+          : "text-destructive"
+      }`}
+    >
+      {order.status === "won"
+        ? `+₹${order.payout?.toFixed(0)}`
+        : order.status === "cancelled"
+        ? `+₹${order.amount}`
+        : `-₹${order.amount}`}
+    </span>
+  </div>
+
+  {order.status === "won" && (
+    <p className="text-xs text-muted-foreground mt-1">
+      ₹{order.commission?.toFixed(0)} commission deducted
+    </p>
+  )}
+
+  {order.status === "cancelled" && (
+    <p className="text-xs text-muted-foreground mt-1">
+      Bet cancelled • Amount refunded
+    </p>
+  )}
+</div>
           ))}
         </Section>
       )}

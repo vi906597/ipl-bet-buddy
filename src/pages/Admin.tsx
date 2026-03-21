@@ -179,7 +179,30 @@ const Admin = () => {
                   <input placeholder="Team B Name" value={form.team_b_name} onChange={(e) => setForm({ ...form, team_b_name: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
                   <input placeholder="Short (e.g. CSK)" value={form.team_b_short} onChange={(e) => setForm({ ...form, team_b_short: e.target.value })} required className="rounded-lg bg-background border border-border px-3 py-2 text-sm" />
                 </div>
-                <input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} required className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm" />
+                <input
+  type="datetime-local"
+  value={form.start_time}
+  onChange={(e) => {
+    const local = new Date(e.target.value);
+
+    // 🔥 LOCAL TIME SAVE (NO UTC BUG)
+    const formatted =
+      local.getFullYear() +
+      "-" +
+      String(local.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(local.getDate()).padStart(2, "0") +
+      "T" +
+      String(local.getHours()).padStart(2, "0") +
+      ":" +
+      String(local.getMinutes()).padStart(2, "0") +
+      ":00";
+
+    setForm({ ...form, start_time: formatted });
+  }}
+  required
+  className="w-full rounded-lg bg-background border border-border px-3 py-2 text-sm"
+/>
                 <div className="flex gap-2">
                   <button type="submit" className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-xs font-bold">Save</button>
                   <button type="button" onClick={() => setShowForm(false)} className="rounded-lg bg-muted px-4 py-2 text-xs font-bold text-muted-foreground">Cancel</button>

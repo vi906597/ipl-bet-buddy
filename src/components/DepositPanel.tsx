@@ -179,46 +179,69 @@ const DepositPanel = () => {
       </div>
 
       {/* QR Modal */}
-      <AnimatePresence>
-        {showQr && selectedAmount && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+<AnimatePresence>
+  {showQr && selectedAmount && (
+    <>
+      {/* Background Overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={() => setShowQr(false)}
+        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60]"
+      />
+
+      {/* Bottom Sheet Modal */}
+      <motion.div
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 28, stiffness: 300 }}
+        className="fixed inset-x-0 bottom-0 z-[70]"
+      >
+        <div className="w-full h-[85vh] max-h-[85vh] overflow-y-auto rounded-t-2xl bg-card border-t border-border p-4 space-y-4">
+
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold flex items-center gap-2">
+              <QrCode className="h-4 w-4 text-primary" />
+              Pay ₹{selectedAmount.toLocaleString("en-IN")}
+            </h3>
+            <button
               onClick={() => setShowQr(false)}
-              className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60]"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-[70] max-w-sm mx-auto rounded-2xl bg-card border border-border p-6 space-y-4"
+              className="h-8 w-8 rounded-full bg-muted flex items-center justify-center"
             >
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-bold flex items-center gap-2">
-                  <QrCode className="h-4 w-4 text-primary" /> Pay ₹{selectedAmount.toLocaleString("en-IN")}
-                </h3>
-                <button onClick={() => setShowQr(false)} className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-              </div>
-              <div className="rounded-xl bg-white p-4 flex items-center justify-center">
-                <img src={qrImageUrl} alt="Payment QR" className="w-48 h-48 object-contain" />
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Scan QR with any UPI app and pay ₹{selectedAmount.toLocaleString("en-IN")}
-              </p>
-              <button
-                onClick={handleConfirmPayment}
-                className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-bold"
-              >
-                ✅ Confirm – I've Paid
-              </button>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          </div>
+
+          {/* QR */}
+          <div className="rounded-xl bg-white p-4 flex items-center justify-center">
+            <img
+              src={qrImageUrl}
+              alt="Payment QR"
+              className="w-56 h-56 object-contain"
+            />
+          </div>
+
+          {/* Text */}
+          <p className="text-xs text-muted-foreground text-center">
+            Scan QR with any UPI app and pay ₹{selectedAmount.toLocaleString("en-IN")}
+          </p>
+
+          {/* Button */}
+          <button
+            onClick={handleConfirmPayment}
+            className="w-full rounded-lg bg-primary text-primary-foreground py-3 text-sm font-bold"
+          >
+            ✅ Confirm – I've Paid
+          </button>
+
+        </div>
+      </motion.div>
+    </>
+  )}
+</AnimatePresence>
 
       {/* Deposit History */}
       <div>

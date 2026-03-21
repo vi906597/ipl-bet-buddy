@@ -143,17 +143,15 @@ const Index = () => {
           <div className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
             <button
               onClick={() => setWalletTab("deposit")}
-              className={`flex items-center justify-center gap-2 rounded-md py-2.5 text-xs font-bold transition-colors ${
-                walletTab === "deposit" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
+              className={`flex items-center justify-center gap-2 rounded-md py-2.5 text-xs font-bold transition-colors ${walletTab === "deposit" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
             >
               <ArrowDownToLine className="h-3.5 w-3.5" /> Deposit
             </button>
             <button
               onClick={() => setWalletTab("withdraw")}
-              className={`flex items-center justify-center gap-2 rounded-md py-2.5 text-xs font-bold transition-colors ${
-                walletTab === "withdraw" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
-              }`}
+              className={`flex items-center justify-center gap-2 rounded-md py-2.5 text-xs font-bold transition-colors ${walletTab === "withdraw" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                }`}
             >
               <ArrowUpFromLine className="h-3.5 w-3.5" /> Withdraw
             </button>
@@ -231,46 +229,53 @@ const Index = () => {
         {selectedMatch && (
           <>
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               onClick={() => setSelectedMatchId(null)}
               className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
             />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-card border-t border-primary/20 shadow-elevated"
-            >
-              <div className="sticky top-0 bg-card z-10 pt-3 pb-2 px-4 border-b border-border">
-                <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-3" />
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-bold font-display">
-                    <span className="text-primary">{selectedMatch.teamA.shortName}</span>
-                    <span className="text-muted-foreground mx-2">vs</span>
-                    <span className="text-accent">{selectedMatch.teamB.shortName}</span>
-                  </h2>
-                  <button
-                    onClick={() => setSelectedMatchId(null)}
-                    className="h-8 w-8 rounded-full bg-muted flex items-center justify-center hover:bg-secondary transition-colors"
-                  >
-                    <X className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
+           <motion.div
+  initial={{ y: "100%" }}
+  animate={{ y: 0 }}
+  exit={{ y: "100%" }}
+  transition={{ type: "spring", damping: 28, stiffness: 300 }}
+  className="fixed inset-x-0 bottom-0 z-50"
+>
+  <div className="w-full h-[90vh] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-card border-t border-primary/20 shadow-elevated">
 
-              <div className="px-4 pb-8 pt-4 space-y-5">
-                <BettingPanel match={selectedMatch} />
-                <div>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                    All Bets
-                  </h3>
-                  <AllBets match={selectedMatch} />
-                </div>
-              </div>
-            </motion.div>
+    {/* HEADER */}
+    <div className="sticky top-0 bg-card z-10 pt-3 pb-2 px-4 border-b border-border">
+      <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-3" />
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-bold font-display">
+          <span className="text-primary">{selectedMatch.teamA.shortName}</span>
+          <span className="text-muted-foreground mx-2">vs</span>
+          <span className="text-accent">{selectedMatch.teamB.shortName}</span>
+        </h2>
+        <button
+          onClick={() => setSelectedMatchId(null)}
+          className="h-8 w-8 rounded-full bg-muted flex items-center justify-center hover:bg-secondary"
+        >
+          <X className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </div>
+    </div>
+
+    {/* CONTENT */}
+    <div className="px-4 pb-8 pt-4 space-y-5">
+      <BettingPanel match={selectedMatch} />
+
+      <div>
+        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+          All Bets
+        </h3>
+        <AllBets match={selectedMatch} />
+      </div>
+    </div>
+
+  </div>
+</motion.div>
           </>
         )}
       </AnimatePresence>
