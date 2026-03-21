@@ -46,7 +46,7 @@ const Auth = () => {
           <div className="h-14 w-14 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto">
             <span className="text-2xl">🏏</span>
           </div>
-          <h1 className="font-display text-2xl font-extrabold">IPL Exchange</h1>
+          <h1 className="font-display text-2xl font-extrabold">SUPER X</h1>
           <p className="text-sm text-muted-foreground">
             {isLogin ? "Login to start betting" : "Create your account"}
           </p>
