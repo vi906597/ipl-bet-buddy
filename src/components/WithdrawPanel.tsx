@@ -48,9 +48,13 @@ const WithdrawPanel = () => {
     if (!user) return;
     const amt = Number(amount);
     if (amt < 10000) {
-      toast.error("Minimum withdraw ₹10,000", {
-        description: "Aap kam se kam ₹10,000 ka withdraw request bhej sakte hain.",
-        duration: 5000,
+      toast.error("⚠️ Minimum Withdraw ₹10,000", {
+        description: "Aap kam se kam ₹10,000 ka withdraw request bhej sakte hain. Apna amount badhayein aur dobara try karein.",
+        duration: 6000,
+        action: {
+          label: "Set ₹10,000",
+          onClick: () => setAmount("10000"),
+        },
       });
       return;
     }
