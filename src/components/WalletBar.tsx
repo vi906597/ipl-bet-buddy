@@ -19,7 +19,7 @@ const WalletBar = () => {
           <span className="text-primary font-bold text-xs">🏏</span>
         </div>
         <div>
-          <h1 className="text-sm font-bold font-display tracking-tight">SUPER X</h1>
+          <h1 className="text-sm font-bold font-display tracking-tight">SUPER X 11</h1>
           <p className="text-[10px] text-primary font-medium">● Season Live</p>
         </div>
       </div>
