@@ -84,18 +84,13 @@ const DepositPanel = () => {
         if (res.error) throw new Error(res.error.message);
         if (res.data?.error) throw new Error(res.data.error);
         if (res.data?.payment_url) {
-          // Save deposit request first
-          await supabase.from("deposit_requests").insert({
-            user_id: user!.id,
-            amount,
-            user_email: user!.email || "",
-            status: "pending",
-          });
-          fetchDeposits();
-          // Open payment URL
-          window.open(res.data.payment_url, "_blank");
+          toast.success("Redirecting to payment gateway...");
+          await fetchDeposits();
+          // Redirect in same tab so user returns naturally
+          window.location.href = res.data.payment_url;
           return;
         }
+        throw new Error("No payment URL received");
       } catch (err: any) {
         toast.error("Gateway error: " + err.message + ". Showing QR instead.");
       }

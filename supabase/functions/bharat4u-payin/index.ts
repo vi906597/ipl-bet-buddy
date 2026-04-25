@@ -17,6 +17,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonClient = createClient(supabaseUrl, anonKey);
     const { data: { user } } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
     if (!user) throw new Error("Unauthorized");
@@ -33,15 +34,31 @@ Deno.serve(async (req) => {
 
     if (!amount || amount <= 0) throw new Error("Invalid amount");
 
+    // Service role client for inserts
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
+
+    // 1) Create deposit_request first so user history shows it immediately
+    const { data: deposit, error: depErr } = await adminClient
+      .from("deposit_requests")
+      .insert({
+        user_id: user.id,
+        amount,
+        user_email: user.email || "",
+        status: "pending",
+      })
+      .select()
+      .single();
+    if (depErr) throw depErr;
+
     const orderId = `ORD${Date.now()}${Math.floor(Math.random() * 1000)}`;
 
-    // Use Bharat4U PayIn v1 API
+    // 2) Call Bharat4U PayIn v1 (URL without .php per docs)
     const formData = new URLSearchParams();
     formData.append("bharat_mid", BHARAT_MID);
     formData.append("bharat_key", BHARAT_KEY);
     formData.append("order_id", orderId);
     formData.append("amount", amount.toString());
-    formData.append("customer_mobile", "0000000000");
+    formData.append("customer_mobile", "9999999999");
 
     const response = await fetch("https://api.bharat4ubiz.site/api/payin/v1/create-order", {
       method: "POST",
@@ -57,7 +74,8 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({
       payment_url: result.result?.payment_url,
-      order_id: result.result?.order_id,
+      order_id: result.result?.order_id || orderId,
+      deposit_id: deposit.id,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
