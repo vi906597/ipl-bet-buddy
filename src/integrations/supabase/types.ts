@@ -170,7 +170,21 @@ export type Database = {
             foreignKeyName: "orders_matched_with_fkey"
             columns: ["matched_with"]
             isOneToOne: false
+            referencedRelation: "admin_pending_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
+            referencedRelation: "pending_orders"
             referencedColumns: ["id"]
           },
         ]
@@ -180,6 +194,8 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           id: string
+          referral_code: string | null
+          referred_by: string | null
           updated_at: string
           user_id: string
           username: string
@@ -189,6 +205,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          referral_code?: string | null
+          referred_by?: string | null
           updated_at?: string
           user_id: string
           username?: string
@@ -198,6 +216,8 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string
           id?: string
+          referral_code?: string | null
+          referred_by?: string | null
           updated_at?: string
           user_id?: string
           username?: string
@@ -333,9 +353,101 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      admin_pending_orders: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string | null
+          match_key: string | null
+          status: string | null
+          team_a_short: string | null
+          team_b_short: string | null
+          team_name: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      pending_orders: {
+        Row: {
+          amount: number | null
+          commission: number | null
+          created_at: string | null
+          id: string | null
+          match_id: string | null
+          matched_at: string | null
+          matched_with: string | null
+          opponent_name: string | null
+          payout: number | null
+          status: string | null
+          team_id: string | null
+          team_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          commission?: number | null
+          created_at?: string | null
+          id?: string | null
+          match_id?: string | null
+          matched_at?: string | null
+          matched_with?: string | null
+          opponent_name?: string | null
+          payout?: number | null
+          status?: string | null
+          team_id?: string | null
+          team_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          commission?: number | null
+          created_at?: string | null
+          id?: string | null
+          match_id?: string | null
+          matched_at?: string | null
+          matched_with?: string | null
+          opponent_name?: string | null
+          payout?: number | null
+          status?: string | null
+          team_id?: string | null
+          team_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
+            referencedRelation: "admin_pending_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_matched_with_fkey"
+            columns: ["matched_with"]
+            isOneToOne: false
+            referencedRelation: "pending_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
+      admin_cancel_all_pending: { Args: never; Returns: undefined }
+      admin_cancel_pending_by_match: {
+        Args: { p_match_id: string }
+        Returns: undefined
+      }
+      auto_cancel_on_live: { Args: { p_match_id: string }; Returns: undefined }
+      cancel_all_pending_bets: { Args: never; Returns: undefined }
+      cancel_pending_bets: { Args: { p_match_id: string }; Returns: undefined }
+      generate_referral_code: { Args: never; Returns: string }
       place_order: {
         Args: {
           p_amount: number

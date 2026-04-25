@@ -47,7 +47,7 @@ const WithdrawPanel = () => {
     e.preventDefault();
     if (!user) return;
     const amt = Number(amount);
-    if (amt <= 0) { toast.error("Enter valid amount"); return; }
+    if (amt < 10000) { toast.error("Minimum withdraw amount is ₹10,000"); return; }
     if (amt > wallet) { toast.error("Insufficient balance"); return; }
 
     if (method === "upi" && !upiId.trim()) { toast.error("Enter UPI ID"); return; }
@@ -96,10 +96,10 @@ const WithdrawPanel = () => {
       <form onSubmit={handleSubmit} className="space-y-3">
         <input
           type="number"
-          placeholder="Withdraw amount (₹)"
+          placeholder="Withdraw amount (min ₹10,000)"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
-          min={1}
+          min={10000}
           required
           className="w-full rounded-lg bg-background border border-border px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 tabular-nums"
         />
