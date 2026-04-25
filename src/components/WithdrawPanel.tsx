@@ -47,7 +47,13 @@ const WithdrawPanel = () => {
     e.preventDefault();
     if (!user) return;
     const amt = Number(amount);
-    if (amt < 10000) { toast.error("Minimum withdraw amount is ₹10,000"); return; }
+    if (amt < 10000) {
+      toast.error("Minimum withdraw ₹10,000", {
+        description: "Aap kam se kam ₹10,000 ka withdraw request bhej sakte hain.",
+        duration: 5000,
+      });
+      return;
+    }
     if (amt > wallet) { toast.error("Insufficient balance"); return; }
 
     if (method === "upi" && !upiId.trim()) { toast.error("Enter UPI ID"); return; }
