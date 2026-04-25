@@ -17,7 +17,11 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
 
   const isLive = match.status === "live";
   const isCompleted = match.status === "completed";
-  const bettingDisabled = isLive || isCompleted;
+
+  // 🔥 EXTRA SAFETY (TIME BASED)
+  const isTimeUp = new Date(match.startTime) <= new Date();
+
+  const bettingDisabled = isLive || isCompleted || isTimeUp;
 
   const calcWinning = (amount: number) => {
     const pot = amount * 2;
@@ -29,8 +33,14 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
     if (!selectedTeam || wallet < amount || bettingDisabled) return;
     setPlacing(amount);
     const opponent = selectedTeam.id === match.teamA.id ? match.teamB : match.teamA;
-    const result = await placeOrder(match.id, selectedTeam.id, selectedTeam.shortName, opponent.shortName, amount);
-    
+    const result = await placeOrder(
+      match.id,
+      selectedTeam.id,
+      selectedTeam.shortName,
+      opponent.shortName,
+      amount
+    );
+
     if (result.error) {
       toast.error(result.error);
     } else if (result.status === "matched") {
@@ -41,17 +51,18 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
     setPlacing(null);
   };
 
-  const formatAmount = (n: number) => n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K` : `${n}`;
+  const formatAmount = (n: number) =>
+    n >= 1000 ? `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}K` : `${n}`;
 
   if (bettingDisabled) {
     return (
       <div className="rounded-xl bg-muted/50 border border-border p-6 text-center space-y-2">
         <Lock className="h-6 w-6 text-muted-foreground mx-auto" />
         <p className="text-sm font-bold text-muted-foreground">
-          {isLive ? "Betting Closed – Match is Live" : "Match Completed"}
+          Betting Closed
         </p>
         <p className="text-xs text-muted-foreground/70">
-          {isLive ? "Betting stops once the match goes live" : "This match has been settled"}
+          Match has started or completed
         </p>
       </div>
     );
@@ -59,15 +70,31 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted-foreground text-center">Pick your winning team</p>
+      <p className="text-xs text-muted-foreground text-center">
+        Pick your winning team
+      </p>
 
       <div className="grid grid-cols-2 gap-3">
-        <TeamButton team={match.teamA} isSelected={selectedTeam?.id === match.teamA.id} onSelect={() => setSelectedTeam(match.teamA)} />
-        <TeamButton team={match.teamB} isSelected={selectedTeam?.id === match.teamB.id} onSelect={() => setSelectedTeam(match.teamB)} />
+        <TeamButton
+          team={match.teamA}
+          isSelected={selectedTeam?.id === match.teamA.id}
+          onSelect={() => {
+            if (!bettingDisabled) setSelectedTeam(match.teamA);
+          }}
+          disabled={bettingDisabled}
+        />
+        <TeamButton
+          team={match.teamB}
+          isSelected={selectedTeam?.id === match.teamB.id}
+          onSelect={() => {
+            if (!bettingDisabled) setSelectedTeam(match.teamB);
+          }}
+          disabled={bettingDisabled}
+        />
       </div>
 
       <AnimatePresence>
-        {selectedTeam && (
+        {selectedTeam && !bettingDisabled && (
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -75,7 +102,10 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
             transition={{ duration: 0.2 }}
           >
             <p className="text-xs text-muted-foreground mb-3">
-              Stake on <span className="font-bold text-primary">{selectedTeam.shortName}</span>
+              Stake on{" "}
+              <span className="font-bold text-primary">
+                {selectedTeam.shortName}
+              </span>
             </p>
             <div className="grid grid-cols-4 gap-2">
               {STAKE_OPTIONS.map((amount) => {
@@ -84,19 +114,22 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
                   <motion.button
                     key={amount}
                     whileTap={{ scale: 0.95 }}
-                    disabled={wallet < amount || placing !== null}
+                    disabled={wallet < amount || placing !== null || bettingDisabled}
                     onClick={() => handleStake(amount)}
                     className={`flex flex-col items-center justify-center rounded-xl py-3 px-1 tabular-nums transition-all border
-                      ${wallet < amount
-                        ? "bg-muted/30 text-muted-foreground/30 border-transparent cursor-not-allowed"
-                        : "bg-secondary border-border hover:border-primary/30 hover:bg-primary/5 active:bg-primary/10 cursor-pointer"
+                      ${
+                        wallet < amount || bettingDisabled
+                          ? "bg-muted/30 text-muted-foreground/30 border-transparent cursor-not-allowed"
+                          : "bg-secondary border-border hover:border-primary/30 hover:bg-primary/5 active:bg-primary/10 cursor-pointer"
                       }`}
                   >
                     {placing === amount ? (
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     ) : (
                       <>
-                        <span className="text-sm font-bold">₹{formatAmount(amount)}</span>
+                        <span className="text-sm font-bold">
+                          ₹{formatAmount(amount)}
+                        </span>
                         <span className="flex items-center gap-0.5 text-[9px] text-primary font-medium mt-0.5">
                           <TrendingUp className="h-2.5 w-2.5" />
                           ₹{formatAmount(winning)}
@@ -114,19 +147,34 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
   );
 };
 
-const TeamButton = ({ team, isSelected, onSelect }: { team: Team; isSelected: boolean; onSelect: () => void }) => {
+const TeamButton = ({
+  team,
+  isSelected,
+  onSelect,
+  disabled,
+}: {
+  team: Team;
+  isSelected: boolean;
+  onSelect: () => void;
+  disabled?: boolean;
+}) => {
   const isPrimary = team.colorVar === "primary";
 
   return (
     <motion.button
-      whileTap={{ scale: 0.97 }}
-      onClick={onSelect}
+      whileTap={{ scale: disabled ? 1 : 0.97 }}
+      onClick={() => {
+        if (!disabled) onSelect();
+      }}
       className={`rounded-xl py-5 text-center font-bold text-base transition-all border
-        ${isSelected
-          ? isPrimary
-            ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.15)]"
-            : "bg-accent/15 border-accent/40 text-accent shadow-[0_0_16px_hsl(var(--accent)/0.15)]"
-          : isPrimary
+        ${
+          disabled
+            ? "bg-muted text-muted-foreground cursor-not-allowed"
+            : isSelected
+            ? isPrimary
+              ? "bg-primary/15 border-primary/40 text-primary shadow-[0_0_16px_hsl(var(--primary)/0.15)]"
+              : "bg-accent/15 border-accent/40 text-accent shadow-[0_0_16px_hsl(var(--accent)/0.15)]"
+            : isPrimary
             ? "bg-primary/5 border-border text-primary/70 hover:bg-primary/10 hover:border-primary/20"
             : "bg-accent/5 border-border text-accent/70 hover:bg-accent/10 hover:border-accent/20"
         }`}
