@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Match, Team } from "@/types/betting";
-import { STAKE_OPTIONS, COMMISSION_RATE } from "@/types/betting";
+import { STAKE_OPTIONS } from "@/types/betting";
+import { useCommissionRate } from "@/hooks/useCommissionRate";
 import { useBettingStore } from "@/store/bettingStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, TrendingUp, Lock } from "lucide-react";
@@ -14,6 +15,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
   const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
   const [placing, setPlacing] = useState<number | null>(null);
   const { wallet, placeOrder } = useBettingStore();
+  const commissionRate = useCommissionRate();
 
   const isLive = match.status === "live";
   const isCompleted = match.status === "completed";
@@ -25,7 +27,7 @@ const BettingPanel = ({ match }: BettingPanelProps) => {
 
   const calcWinning = (amount: number) => {
     const pot = amount * 2;
-    const commission = pot * COMMISSION_RATE;
+    const commission = pot * commissionRate;
     return pot - commission;
   };
 
