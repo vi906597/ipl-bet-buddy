@@ -25,6 +25,7 @@ const Index = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [walletTab, setWalletTab] = useState<"deposit" | "withdraw">("deposit");
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
+  const [profile, setProfile] = useState<any>(null);
   const { wallet, orders, fetchProfile, fetchOrders } = useBettingStore();
   const { user } = useAuth();
 
@@ -36,6 +37,7 @@ const Index = () => {
       fetchOrders();
       loadMatches();
       loadLeaderboard();
+      loadProfile();
     }
   }, [user]);
 
@@ -65,6 +67,18 @@ const Index = () => {
     if (data) setLeaderboard(data as any);
   };
 
+  const loadProfile = async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("user_id", user?.id)
+      .single();
+
+    if (data) setProfile(data);
+  };
+  const referralLink = profile
+    ? `${window.location.origin}/auth?ref=${profile.referral_code}`
+    : "";
   return (
     <div className="min-h-screen bg-background flex flex-col pb-20">
       <WalletBar />
@@ -202,23 +216,82 @@ const Index = () => {
       {activeTab === "profile" && (
         <main className="flex-1 max-w-2xl mx-auto w-full p-4 space-y-4">
           <h2 className="font-display text-lg font-bold">Profile</h2>
+
+          {/* USER CARD */}
           <div className="rounded-xl bg-card border border-border p-6 text-center">
             <div className="h-16 w-16 rounded-full bg-primary/15 border-2 border-primary/30 flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">🏏</span>
             </div>
-            <p className="font-bold text-lg">{user?.user_metadata?.username || "Player"}</p>
+            <p className="font-bold text-lg">
+              {user?.user_metadata?.username || "Player"}
+            </p>
             <p className="text-xs text-muted-foreground">{user?.email}</p>
           </div>
+
+          {/* STATS */}
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-card border border-border p-3 text-center">
               <p className="text-lg font-bold tabular-nums">{orders.length}</p>
               <p className="text-[10px] text-muted-foreground">Total Bets</p>
             </div>
+
             <div className="rounded-lg bg-card border border-border p-3 text-center">
               <p className="text-lg font-bold tabular-nums text-primary">
-                {orders.length > 0 ? Math.round(orders.filter(o => o.status === "won").length / Math.max(orders.filter(o => o.status === "won" || o.status === "lost").length, 1) * 100) : 0}%
+                {orders.length > 0
+                  ? Math.round(
+                    (orders.filter((o) => o.status === "won").length /
+                      Math.max(
+                        orders.filter(
+                          (o) => o.status === "won" || o.status === "lost"
+                        ).length,
+                        1
+                      )) *
+                    100
+                  )
+                  : 0}
+                %
               </p>
               <p className="text-[10px] text-muted-foreground">Win Rate</p>
+            </div>
+          </div>
+
+          {/* 🔥 REFERRAL (FIXED) */}
+          <div className="w-full max-w-md md:max-w-xl lg:max-w-2xl mx-auto rounded-xl bg-card border border-border p-4 space-y-3">
+            <p className="text-sm font-bold text-primary">
+              Invite & Earn ₹10
+            </p>
+
+            <div className="text-xs bg-muted p-2 rounded break-all">
+              {referralLink || "Loading..."}
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(referralLink);
+                  alert("Copied!");
+                }}
+                className="flex-1 bg-primary text-white py-2 rounded text-xs font-bold"
+              >
+                Copy
+              </button>
+
+              <button
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: "Join & Earn",
+                      text: "Join & get bonus!",
+                      url: referralLink,
+                    });
+                  } else {
+                    alert("Sharing not supported");
+                  }
+                }}
+                className="flex-1 bg-secondary py-2 rounded text-xs font-bold"
+              >
+                Share
+              </button>
             </div>
           </div>
         </main>
@@ -235,47 +308,47 @@ const Index = () => {
               onClick={() => setSelectedMatchId(null)}
               className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
             />
-           <motion.div
-  initial={{ y: "100%" }}
-  animate={{ y: 0 }}
-  exit={{ y: "100%" }}
-  transition={{ type: "spring", damping: 28, stiffness: 300 }}
-  className="fixed inset-x-0 bottom-0 z-50"
->
-  <div className="w-full h-[90vh] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-card border-t border-primary/20 shadow-elevated">
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="fixed inset-x-0 bottom-0 z-50"
+            >
+              <div className="w-full h-[90vh] max-h-[90vh] overflow-y-auto rounded-t-2xl bg-card border-t border-primary/20 shadow-elevated">
 
-    {/* HEADER */}
-    <div className="sticky top-0 bg-card z-10 pt-3 pb-2 px-4 border-b border-border">
-      <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-3" />
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold font-display">
-          <span className="text-primary">{selectedMatch.teamA.shortName}</span>
-          <span className="text-muted-foreground mx-2">vs</span>
-          <span className="text-accent">{selectedMatch.teamB.shortName}</span>
-        </h2>
-        <button
-          onClick={() => setSelectedMatchId(null)}
-          className="h-8 w-8 rounded-full bg-muted flex items-center justify-center hover:bg-secondary"
-        >
-          <X className="h-4 w-4 text-muted-foreground" />
-        </button>
-      </div>
-    </div>
+                {/* HEADER */}
+                <div className="sticky top-0 bg-card z-10 pt-3 pb-2 px-4 border-b border-border">
+                  <div className="w-10 h-1 rounded-full bg-muted mx-auto mb-3" />
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold font-display">
+                      <span className="text-primary">{selectedMatch.teamA.shortName}</span>
+                      <span className="text-muted-foreground mx-2">vs</span>
+                      <span className="text-accent">{selectedMatch.teamB.shortName}</span>
+                    </h2>
+                    <button
+                      onClick={() => setSelectedMatchId(null)}
+                      className="h-8 w-8 rounded-full bg-muted flex items-center justify-center hover:bg-secondary"
+                    >
+                      <X className="h-4 w-4 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
 
-    {/* CONTENT */}
-    <div className="px-4 pb-8 pt-4 space-y-5">
-      <BettingPanel match={selectedMatch} />
+                {/* CONTENT */}
+                <div className="px-4 pb-8 pt-4 space-y-5">
+                  <BettingPanel match={selectedMatch} />
 
-      <div>
-        <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-          All Bets
-        </h3>
-        <AllBets match={selectedMatch} />
-      </div>
-    </div>
+                  <div>
+                    <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                      All Bets
+                    </h3>
+                    <AllBets match={selectedMatch} />
+                  </div>
+                </div>
 
-  </div>
-</motion.div>
+              </div>
+            </motion.div>
           </>
         )}
       </AnimatePresence>
