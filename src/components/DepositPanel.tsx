@@ -6,7 +6,7 @@ import { ArrowDownToLine, Upload, Clock, CheckCircle, XCircle, QrCode, X, Image 
 import { motion, AnimatePresence } from "framer-motion";
 import paymentQrFallback from "@/assets/payment-qr.png";
 
-const AMOUNTS = [100, 200, 500, 1000, 5000];
+const AMOUNTS = [20, 200, 500, 1000, 5000];
 
 interface DepositRequest {
   id: string;
