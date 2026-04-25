@@ -1,11 +1,12 @@
 import { useBettingStore } from "@/store/bettingStore";
-import { COMMISSION_RATE } from "@/types/betting";
+import { useCommissionRate } from "@/hooks/useCommissionRate";
 import { motion, AnimatePresence } from "framer-motion";
 import { Clock, CheckCircle2, Trophy, XCircle } from "lucide-react";
 import { useEffect } from "react";
 
 const OrderBook = ({ matchId }: { matchId?: string }) => {
   const { orders, fetchOrders } = useBettingStore();
+  const commissionRate = useCommissionRate();
 
   useEffect(() => {
     fetchOrders(matchId);
@@ -61,7 +62,7 @@ const settled = filtered.filter(
         <Section title="Confirmed" count={matched.length}>
           <AnimatePresence>
             {matched.map((order) => {
-              const winAmount = order.amount * 2 * (1 - COMMISSION_RATE);
+              const winAmount = order.amount * 2 * (1 - commissionRate);
               return (
                 <motion.div
                   key={order.id}
